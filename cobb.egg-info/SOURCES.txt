@@ -1,8 +1,0 @@
-README.rst
-setup.py
-cobb/__init__.py
-cobb.egg-info/PKG-INFO
-cobb.egg-info/SOURCES.txt
-cobb.egg-info/dependency_links.txt
-cobb.egg-info/requires.txt
-cobb.egg-info/top_level.txt
