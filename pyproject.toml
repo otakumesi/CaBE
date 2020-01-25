@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "cobb"
-version = "0.1.0"
+name = "CaBE"
+version = "0.1.1"
 description = ""
 authors = ["Takuro Niitsuma <bakednt@gmail.com>"]
 
