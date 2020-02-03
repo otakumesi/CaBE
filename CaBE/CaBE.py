@@ -1,10 +1,10 @@
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 
-from collections import Counter, defaultdict
+from collections import Counter
 
 from .helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
-from .evaluate import Evaluator
+from .evaluator import Evaluator
 
 
 class CaBE():

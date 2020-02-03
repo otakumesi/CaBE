@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from bert_serving.client import BertClient
 
-from .CaBE import CaBE
+import CaBE
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
 
