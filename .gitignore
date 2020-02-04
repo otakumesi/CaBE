@@ -178,5 +178,5 @@ flycheck_*.el
 # network security
 /network-security.data
 
-
-
+# for experiment
+/log

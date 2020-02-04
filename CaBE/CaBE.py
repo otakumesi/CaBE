@@ -1,10 +1,8 @@
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
-
 from collections import Counter
 
 from helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
-from evaluator import Evaluator
 
 
 class CaBE():
@@ -30,7 +28,7 @@ class CaBE():
         self.id2ent = {v: k for k, v in self.ent2id.items()}
         self.rel2id = {v: k for k, v in enumerate(self.relations)}
         self.id2rel = {v: k for k, v in self.rel2id.items()}
-        self.gold_ent2cluster = gold_ent2cluster
+        self.__gold_ent2cluster = gold_ent2cluster
 
     def run(self):
         print("----- Start: run COBB -----")
@@ -44,14 +42,12 @@ class CaBE():
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
-        ent_outputs, rel_outputs = self.__cluster(entities, relations)
+        output_ent2cluster, rel_outputs = self.__cluster(entities, relations)
         print("--- End: cluster phrases ---")
 
-        print("--- Start: evlaluate noun phrases ---")
-        self.__np_evaluate(ent_outputs)
-        print("--- End: evaluate noun phrases ---")
-
         print("----- End: run COBB -----")
+
+        return output_ent2cluster, rel_outputs
 
     def __cluster(self, entities, relations):
         ent_raw_clusters = self.__cluster_entities(entities)
@@ -62,7 +58,22 @@ class CaBE():
         rel_outputs = canonical_phrases(
             rel_raw_clusters, self.id2rel, self.rel2freq)
 
-        return ent_outputs, rel_outputs
+        raw_ent2cluster = {}
+        for ent, cluster in ent_outputs.items():
+            for phrase in cluster:
+                raw_ent2cluster[phrase] = ent
+
+        output_ent2cluster = {}
+        for triple in self.triples:
+
+            sbj, obj = triple['triple'][0], triple['triple'][2]
+            triple_id = triple['_id']
+            sbj_u, obj_u = f'{sbj}|{triple_id}', f'{obj}|{triple_id}'
+
+            output_ent2cluster[sbj_u] = raw_ent2cluster[sbj]
+            output_ent2cluster[obj_u] = raw_ent2cluster[obj]
+
+        return output_ent2cluster, rel_outputs
 
     def __cluster_entities(self, entities):
         entity_cluster = AgglomerativeClustering(
@@ -82,31 +93,6 @@ class CaBE():
         assigned_clusters = relation_cluster.fit_predict(relations)
         return transform_clusters(assigned_clusters)
 
-    def __np_evaluate(self, ent_outputs):
-        raw_ent2cluster = {}
-        for ent, cluster in ent_outputs.items():
-            for phrase in cluster:
-                raw_ent2cluster[phrase] = ent
-
-        output_ent2cluster = {}
-        for triple in self.triples:
-
-            sbj, obj = triple['triple'][0], triple['triple'][2]
-            triple_id = triple['_id']
-            sbj_u, obj_u = f'{sbj}|{triple_id}', f'{obj}|{triple_id}'
-
-            output_ent2cluster[sbj_u] = raw_ent2cluster[sbj]
-            output_ent2cluster[obj_u] = raw_ent2cluster[obj]
-
-        evl = Evaluator(output_ent2cluster, self.gold_ent2cluster)
-        print('Macro Precision: {}'.format(evl.macro_precision()))
-        print('Macro Recall: {}'.format(evl.macro_recall()))
-        print('Macro F1: {}'.format(evl.macro_f1_score()))
-
-        print('Micro Precision: {}'.format(evl.micro_precision()))
-        print('Micro Recall: {}'.format(evl.micro_recall()))
-        print('Micro F1: {}'.format(evl.micro_f1_score()))
-
-        print('Pairwise Precision: {}'.format(evl.pairwise_precision()))
-        print('Pairwise Recall: {}'.format(evl.pairwise_recall()))
-        print('Pairwise F1: {}'.format(evl.pairwise_f1_score()))
+    @property
+    def gold_ent2cluster(self):
+        return self.__gold_ent2cluster

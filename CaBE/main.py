@@ -1,7 +1,5 @@
 from argparse import ArgumentParser
-from bert_serving.client import BertClient
-
-import CaBE
+from experiment import ex
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
 
@@ -11,8 +9,16 @@ if __name__ == '__main__':
         description="CaBE: Canonicalizion Open Knowledge Bases with BERT")
     parser.add_argument('-name', dest='name', default=None,
                         help='Give an output file name')
-    parser.add_argument('-file', dest='file', default=DEFAULT_REVERB_PATH,
+    parser.add_argument('-file', dest='file', default=None,
                         help='Give an input file name')
+    parser.add_argument('-threshold', dest='threshold', default=.25,
+                        help='Give an threshold of clustering')
+
+
     args = parser.parse_args()
 
-    CaBE.CaBE(name=args.name, model=BertClient(), file_name=args.file).run()
+    config = {"name": args.name,
+              "file_name": args.file,
+              "threshold": args.threshold}
+    config = {k: v for k, v in config.items() if v is not None}
+    ex.run(config_updates=config)

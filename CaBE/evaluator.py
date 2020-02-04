@@ -141,6 +141,21 @@ def _pairwise_recall(output_cluster2ent, gold_cluster2ent, gold_ent2cluster):
     return float(num_hits) / float(num_pairs)
 
 
+def np_evaluate(output_ent2cluster, gold_ent2cluster):
+    evl = Evaluator(output_ent2cluster, gold_ent2cluster)
+    print('Macro Precision: {}'.format(evl.macro_precision()))
+    print('Macro Recall: {}'.format(evl.macro_recall()))
+    print('Macro F1: {}'.format(evl.macro_f1_score()))
+
+    print('Micro Precision: {}'.format(evl.micro_precision()))
+    print('Micro Recall: {}'.format(evl.micro_recall()))
+    print('Micro F1: {}'.format(evl.micro_f1_score()))
+
+    print('Pairwise Precision: {}'.format(evl.pairwise_precision()))
+    print('Pairwise Recall: {}'.format(evl.pairwise_recall()))
+    print('Pairwise F1: {}'.format(evl.pairwise_f1_score()))
+
+
 def invert_ele2cluster(ele2cluster):
     cluster2ele = defaultdict(list)
     for ele, cluster in ele2cluster.items():
