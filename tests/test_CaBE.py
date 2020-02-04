@@ -50,42 +50,42 @@ def cluster_fixtures():
 
 
 def test_macro_precision(cluster_fixtures):
-    macro_precision = evl.__macro_precision(
+    macro_precision = evl._macro_precision(
         cluster_fixtures['output']['cluster2ent'],
         cluster_fixtures['gold']['ent2cluster'])
     assert macro_precision == (float(2) / float(3))
 
 
 def test_macro_recall(cluster_fixtures):
-    macro_recall = evl.__macro_precision(
+    macro_recall = evl._macro_precision(
         cluster_fixtures['gold']['cluster2ent'],
         cluster_fixtures['output']['ent2cluster'])
     assert macro_recall == (float(2) / float(3))
 
 
 def test_micro_precision(cluster_fixtures):
-    micro_precision = evl.__micro_precision(
+    micro_precision = evl._micro_precision(
         cluster_fixtures['output']['cluster2ent'],
         cluster_fixtures['gold']['ent2cluster'])
     assert micro_precision == (float(6) / float(7))
 
 
 def test_micro_recall(cluster_fixtures):
-    micro_recall = evl.__micro_precision(
+    micro_recall = evl._micro_precision(
         cluster_fixtures['gold']['cluster2ent'],
         cluster_fixtures['output']['ent2cluster'])
     assert micro_recall == (float(6) / float(7))
 
 
 def test_pairwise_precision(cluster_fixtures):
-    pairwise_precision = evl.__pairwise_precision(
+    pairwise_precision = evl._pairwise_precision(
         cluster_fixtures['output']['cluster2ent'],
         cluster_fixtures['gold']['ent2cluster'])
     assert pairwise_precision == (float(4) / float(6))
 
 
 def test_pairwise_recall(cluster_fixtures):
-    pairwise_recall = evl.__pairwise_recall(
+    pairwise_recall = evl._pairwise_recall(
         cluster_fixtures['output']['cluster2ent'],
         cluster_fixtures['gold']['cluster2ent'],
         cluster_fixtures['gold']['ent2cluster'])

@@ -10,37 +10,52 @@ class Evaluator:
         self.gold_ele2cluster = gold_ele2cluster
         self.gold_cluster2ent = invert_ele2cluster(gold_ele2cluster)
 
-        for ent, cluster in gold_ele2cluster:
+        for ent, cluster in gold_ele2cluster.items():
             self.gold_cluster2ent[cluster].append(ent)
 
     def macro_precision(self):
-        return __macro_precision(
+        return _macro_precision(
             self.output_cluster2ent, self.gold_ele2cluster)
 
     def macro_recall(self):
-        return __macro_precision(
+        return _macro_precision(
             self.gold_cluster2ent, self.output_ele2cluster)
 
     def macro_f1_score(self):
-        pass
-
-    def micro_recall(self):
-        pass
+        deno = self.macro_precision() + self.macro_recall()
+        nume = self.macro_precision() * self.macro_recall()
+        return 2 * (nume / deno)
 
     def micro_precision(self):
-        pass
+        return _macro_precision(
+            self.output_cluster2ent, self.gold_ele2cluster)
+
+    def micro_recall(self):
+        return _macro_precision(
+            self.gold_cluster2ent, self.output_ele2cluster)
 
     def micro_f1_score(self):
-        pass
+        deno = self.micro_precision() + self.micro_recall()
+        nume = self.micro_precision() * self.micro_recall()
+        return 2 * (nume / deno)
 
     def pairwise_recall(self):
-        pass
+        return _pairwise_precision(
+            self.output_cluster2ent, self.gold_ele2cluster)
 
     def pairwise_precision(self):
-        pass
+        return _pairwise_recall(
+            self.output_cluster2ent,
+            self.gold_cluster2ent,
+            self.gold_ele2cluster)
+
+    def pairwise_f1_score(self):
+        deno = self.pairwise_precision() + self.pairwise_recall()
+        nume = self.pairwise_precision() * self.pairwise_recall()
+        return 2 * (nume / deno)
 
 
-def __macro_precision(output_cluster2ele, gold_ele2cluster):
+def _macro_precision(output_cluster2ele, gold_ele2cluster):
     prec_denom = len(output_cluster2ele)
 
     if not prec_denom:
@@ -56,13 +71,13 @@ def __macro_precision(output_cluster2ele, gold_ele2cluster):
 
         if len(res) == 1:
             prec_numer += 1
-        elif len(res) > 1:
-            print('Error In Clustering micro')
+        # elif len(res) > 1:
+        #     print('Error In Clustering micro')
 
     return float(prec_numer) / float(prec_denom)
 
 
-def __micro_precision(output_cluster2ele, gold_ele2cluster):
+def _micro_precision(output_cluster2ele, gold_ele2cluster):
     num_prec = 0
     total = 0
 
@@ -83,7 +98,7 @@ def __micro_precision(output_cluster2ele, gold_ele2cluster):
     return float(num_prec) / float(total)
 
 
-def __pairwise_precision(output_cluster2ent, gold_ent2cluster):
+def _pairwise_precision(output_cluster2ent, gold_ent2cluster):
     num_hits = 0
     num_pairs = 0
 
@@ -104,7 +119,7 @@ def __pairwise_precision(output_cluster2ent, gold_ent2cluster):
     return float(num_hits) / float(num_pairs)
 
 
-def __pairwise_recall(output_cluster2ent, gold_cluster2ent, gold_ent2cluster):
+def _pairwise_recall(output_cluster2ent, gold_cluster2ent, gold_ent2cluster):
     num_hits = 0
     for _, cluster in output_cluster2ent.items():
         pairs = list(combinations(cluster, 2))

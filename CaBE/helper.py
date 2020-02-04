@@ -22,8 +22,8 @@ def extract_phrases(raw_triples):
         gold_link_sub = raw_triple['true_link']['subject']
         gold_link_obj = raw_triple['true_link']['object']
 
-        gold_ent2cluster[subject_phrase + '|' + triple_id] = gold_link_sub
-        gold_ent2cluster[object_phrase + '|' + triple_id] = gold_link_obj
+        gold_ent2cluster[f'{subject_phrase}|{triple_id}'] = gold_link_sub
+        gold_ent2cluster[f'{object_phrase}|{triple_id}'] = gold_link_obj
 
         entities.extend([subject_phrase, object_phrase])
         relations.append(relation_phrase)
@@ -32,16 +32,16 @@ def extract_phrases(raw_triples):
 
 
 def canonical_phrases(clusters, id2phrase, id2freq):
-    canonicalized_phrases = defaultdict(set)
-    for _, phrase_ids in clusters:
+    canonicalized_phrases = defaultdict(list)
+    for _, phrase_ids in clusters.items():
         representative = id2phrase[phrase_ids[0]]
         cluster_phrases = set()
         for phrase_id in phrase_ids:
-            current_phrase = id2freq[id2phrase[phrase_id]]
+            current_phrase = id2phrase[phrase_id]
             cluster_phrases.add(current_phrase)
             if id2freq[representative] < id2freq[current_phrase]:
                 representative = current_phrase
-        canonicalized_phrases[representative] = cluster_phrases
+        canonicalized_phrases[representative] = list(cluster_phrases)
     return canonicalized_phrases
 
 

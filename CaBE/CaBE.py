@@ -3,12 +3,12 @@ from sklearn.cluster import AgglomerativeClustering
 
 from collections import Counter
 
-from .helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
-from .evaluator import Evaluator
+from helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
+from evaluator import Evaluator
 
 
 class CaBE():
-    def __init__(self, name, model, file_name, distance_threshold=.4239):
+    def __init__(self, name, model, file_name, distance_threshold=.25):
         self.name = name
         self.model = model
         self.distance_threshold = distance_threshold
@@ -62,7 +62,7 @@ class CaBE():
         rel_outputs = canonical_phrases(
             rel_raw_clusters, self.id2rel, self.rel2freq)
 
-        return rel_outputs, ent_outputs
+        return ent_outputs, rel_outputs
 
     def __cluster_entities(self, entities):
         entity_cluster = AgglomerativeClustering(
@@ -84,19 +84,29 @@ class CaBE():
 
     def __np_evaluate(self, ent_outputs):
         raw_ent2cluster = {}
-        for ent, cluster in ent_outputs:
+        for ent, cluster in ent_outputs.items():
             for phrase in cluster:
                 raw_ent2cluster[phrase] = ent
 
         output_ent2cluster = {}
         for triple in self.triples:
-            triple_id = triple['_id']
+
             sbj, obj = triple['triple'][0], triple['triple'][2]
-            sbj_u, obj_u = sbj + '|' + triple_id, obj + '|' + triple_id
+            triple_id = triple['_id']
+            sbj_u, obj_u = f'{sbj}|{triple_id}', f'{obj}|{triple_id}'
 
             output_ent2cluster[sbj_u] = raw_ent2cluster[sbj]
             output_ent2cluster[obj_u] = raw_ent2cluster[obj]
 
-        evl = Evaluator(raw_ent2cluster, self.gold_ent2cluster)
+        evl = Evaluator(output_ent2cluster, self.gold_ent2cluster)
         print('Macro Precision: {}'.format(evl.macro_precision()))
         print('Macro Recall: {}'.format(evl.macro_recall()))
+        print('Macro F1: {}'.format(evl.macro_f1_score()))
+
+        print('Micro Precision: {}'.format(evl.micro_precision()))
+        print('Micro Recall: {}'.format(evl.micro_recall()))
+        print('Micro F1: {}'.format(evl.micro_f1_score()))
+
+        print('Pairwise Precision: {}'.format(evl.pairwise_precision()))
+        print('Pairwise Recall: {}'.format(evl.pairwise_recall()))
+        print('Pairwise F1: {}'.format(evl.pairwise_f1_score()))

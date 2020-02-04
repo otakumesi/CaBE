@@ -15,4 +15,4 @@ if __name__ == '__main__':
                         help='Give an input file name')
     args = parser.parse_args()
 
-    CaBE(name=args.name, model=BertClient(), file_name=args.file).run()
+    CaBE.CaBE(name=args.name, model=BertClient(), file_name=args.file).run()
