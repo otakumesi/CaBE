@@ -6,13 +6,12 @@ authors = ["Takuro Niitsuma <bakednt@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-bert-serving-client = "^1.10"
 scikit-learn = "^0.22.1"
-tensorflow = "=1.14.0"
 sacred = "^0.8.1"
+transformers = "^2.4"
+torch = "^1.4"
 
 [tool.poetry.dev-dependencies]
-bert-serving-server = "^1.10"
 pytest = "^3.0"
 
 [build-system]

@@ -1,10 +1,9 @@
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
 
-from bert_serving.client import BertClient
-
 from CaBE import CaBE
 from evaluator import np_evaluate
+from BERT import BERT
 
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
@@ -15,7 +14,7 @@ ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
 @ex.config
 def experiment_config():
-    model= BertClient()
+    model= BERT()
     name = 'CaBE - reverb45K'
     file_name = DEFAULT_REVERB_PATH
     threshold = .25
