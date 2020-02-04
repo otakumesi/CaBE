@@ -180,3 +180,5 @@ flycheck_*.el
 
 # for experiment
 /log
+/data/*
+!.gitkeep
