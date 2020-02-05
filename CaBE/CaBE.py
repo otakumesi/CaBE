@@ -9,10 +9,11 @@ from helper import read_triples, extract_phrases, canonical_phrases, transform_c
 
 
 class CaBE():
-    def __init__(self, name, model, file_name, distance_threshold=.25):
+    def __init__(self, name, model, file_name, distance_threshold=.25, linkage='single'):
         self.name = name
         self.model = model
         self.distance_threshold = distance_threshold
+        self.linkage = linkage
         self.__init_triples(file_name)
 
     def __init_triples(self, file_path):
@@ -39,23 +40,19 @@ class CaBE():
         print("--- Start: encode entities ---")
         ent_pkl_path = f'./data/ent-{self.name}.pkl'
         if os.path.isfile(ent_pkl_path):
-            with open(ent_pkl_path, 'rb') as f:
-                entities = pickle.load(f)
+            entities = pickle.load(open(ent_pkl_path, 'rb'))
         else:
             entities = self.model.encode(self.entities)
-            with open(ent_pkl_path, 'wb') as f:
-                pickle.dump(entities, f)
+            pickle.dump(entities, open(ent_pkl_path, 'wb'))
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
         rel_pkl_path = f'./data/rel-{self.name}.pkl'
         if os.path.isfile(rel_pkl_path):
-            with open(rel_pkl_path, 'rb') as f:
-                relations = pickle.load(f)
+            relations = pickle.load(open(rel_pkl_path, 'rb'))
         else:
             relations = self.model.encode(self.relations)
-            with open(rel_pkl_path, 'wb') as f:
-                pickle.dump(relations, f)
+            pickle.dump(relations, open(rel_pkl_path, 'wb'))
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
@@ -97,9 +94,9 @@ class CaBE():
     def __cluster_entities(self, entities):
         entity_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
-            n_clusters=None,
+
             affinity="cosine",
-            linkage="single")
+            linkage=self.linkage)
         assigned_clusters = entity_cluster.fit_predict(entities)
         return transform_clusters(assigned_clusters)
 
@@ -108,7 +105,7 @@ class CaBE():
             distance_threshold=self.distance_threshold,
             n_clusters=None,
             affinity="cosine",
-            linkage="single")
+            linkage=self.linkage)
         assigned_clusters = relation_cluster.fit_predict(relations)
         return transform_clusters(assigned_clusters)
 
@@ -118,6 +115,5 @@ class CaBE():
 
     def dump_clusters(self, clusters, prefix):
         file_path = f'./data/{prefix}-{self.name}-threshold_{self.distance_threshold}.pkl'
-        with open(file_path, 'wb') as f:
-            pickle.dump(clusters, f)
+        pickle.dump(clusters, open(file_path, 'wb'))
 

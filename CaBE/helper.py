@@ -7,15 +7,13 @@ from collections import defaultdict
 def read_triples(file_path):
     pickle_path = f'{file_path}.pkl'
     if os.path.isfile(pickle_path):
-        with open(pickle_path, 'rb') as f:
-            triples = pickle.load(f)
+        triples = pickle.load(open(pickle_path, 'rb'))
     else:
         triples = []
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
                 triples.append(json.loads(line))
-        with open(pickle_path, 'wb') as f:
-            pickle.dump(triples, f)
+        pickle.dump(triples, open(pickle_path, 'wb'))
     return triples
 
 

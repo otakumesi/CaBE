@@ -10,6 +10,9 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
+THRESHOLDS = list(range(0, 1, 0.1))
+LINKAGES = ['single', 'complete', 'average']
+
 
 @ex.config
 def experiment_config():
@@ -17,10 +20,11 @@ def experiment_config():
     name = 'CaBE - reverb45K'
     file_name = DEFAULT_REVERB_PATH
     threshold = .25
+    linkage = 'single'
 
 
 @ex.main
-def experiment_main(_run, name, model, file_name, threshold):
+def experiment_main(_run, name, model, file_name, threshold, linkage, thresholds):
     cabe = CaBE(name=name,
                 model=model,
                 file_name=file_name,
