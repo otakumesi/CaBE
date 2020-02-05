@@ -4,6 +4,7 @@ from transformers import BertTokenizer, BertModel
 
 SAVED_MODEL_PATH = '/tmp/BERT_MODEL'
 
+
 class BERT:
     def __init__(self):
         if os.path.exists(SAVED_MODEL_PATH) and os.listdir(SAVED_MODEL_PATH):
@@ -18,6 +19,6 @@ class BERT:
             self.tokenizer.save_pretrained(SAVED_MODEL_PATH)
 
     def encode(self, phrases):
-        input_ids = torch.tensor([self.tokenizer.convert_tokens_to_ids(phrases)])
+        input_ids = torch.tensor([self.tokenizer.convert_tokens_to_ids(phrases)]).reshape(-1, 1)
         with torch.no_grad():
-            return self.model(input_ids)[0][0]
+            return self.model(input_ids)[0].squeeze()
