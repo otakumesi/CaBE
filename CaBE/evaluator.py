@@ -27,11 +27,11 @@ class Evaluator:
         return 2 * (nume / deno)
 
     def micro_precision(self):
-        return _macro_precision(
+        return _micro_precision(
             self.output_cluster2ent, self.gold_ele2cluster)
 
     def micro_recall(self):
-        return _macro_precision(
+        return _micro_precision(
             self.gold_cluster2ent, self.output_ele2cluster)
 
     def micro_f1_score(self):
