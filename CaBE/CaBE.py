@@ -1,3 +1,6 @@
+import pickle
+import os
+
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 from collections import Counter
@@ -34,15 +37,31 @@ class CaBE():
         print("----- Start: run COBB -----")
 
         print("--- Start: encode entities ---")
-        entities = self.model.encode(self.entities)
+        ent_pkl_path = f'./data/ent-{self.name}.pkl'
+        if os.path.isfile(ent_pkl_path):
+            with open(ent_pkl_path, 'rb') as f:
+                entities = pickle.load(f)
+        else:
+            entities = self.model.encode(self.entities)
+            with open(ent_pkl_path, 'wb') as f:
+                pickle.dump(entities, f)
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
-        relations = self.model.encode(self.relations)
+        rel_pkl_path = f'./data/rel-{self.name}.pkl'
+        if os.path.isfile(rel_pkl_path):
+            with open(rel_pkl_path, 'rb') as f:
+                relations = pickle.load(f)
+        else:
+            relations = self.model.encode(self.relations)
+            with open(rel_pkl_path, 'wb') as f:
+                pickle.dump(relations, f)
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
         output_ent2cluster, rel_outputs = self.__cluster(entities, relations)
+        self.dump_clusters(output_ent2cluster, 'ent')
+        self.dump_clusters(rel_outputs, 'rel')
         print("--- End: cluster phrases ---")
 
         print("----- End: run COBB -----")
@@ -96,3 +115,9 @@ class CaBE():
     @property
     def gold_ent2cluster(self):
         return self.__gold_ent2cluster
+
+    def dump_clusters(self, clusters, prefix):
+        file_path = f'./data/{prefix}-{self.name}-threshold_{self.distance_threshold}.pkl'
+        with open(file_path, 'wb') as f:
+            pickle.dump(clusters, f)
+

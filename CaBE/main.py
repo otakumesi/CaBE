@@ -1,8 +1,6 @@
 from argparse import ArgumentParser
 from experiment import ex
 
-DEFAULT_REVERB_PATH = './data/reverb45k_test'
-
 
 if __name__ == '__main__':
     parser = ArgumentParser(
@@ -13,7 +11,6 @@ if __name__ == '__main__':
                         help='Give an input file name')
     parser.add_argument('-threshold', dest='threshold', default=.25,
                         help='Give an threshold of clustering')
-
 
     args = parser.parse_args()
 

@@ -154,6 +154,7 @@ def np_evaluate(output_ent2cluster, gold_ent2cluster):
     print('Pairwise Precision: {}'.format(evl.pairwise_precision()))
     print('Pairwise Recall: {}'.format(evl.pairwise_recall()))
     print('Pairwise F1: {}'.format(evl.pairwise_f1_score()))
+    return evl
 
 
 def invert_ele2cluster(ele2cluster):

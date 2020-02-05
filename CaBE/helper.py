@@ -1,12 +1,21 @@
+import pickle
+import os
 import json
 from collections import defaultdict
 
 
 def read_triples(file_path):
-    triples = []
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            triples.append(json.loads(line))
+    pickle_path = f'{file_path}.pkl'
+    if os.path.isfile(pickle_path):
+        with open(pickle_path, 'rb') as f:
+            triples = pickle.load(f)
+    else:
+        triples = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                triples.append(json.loads(line))
+        with open(pickle_path, 'wb') as f:
+            pickle.dump(triples, f)
     return triples
 
 
@@ -50,8 +59,3 @@ def transform_clusters(cluster_values):
     for ent_id, cluster in enumerate(cluster_values):
         clusters[cluster].append(ent_id)
     return clusters
-
-
-def dumpClusters(clusters):
-    pass
-
