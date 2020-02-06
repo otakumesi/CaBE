@@ -12,7 +12,7 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-THRESHOLDS = np.arange(0.001, 0.002, 0.0001)
+THRESHOLDS = np.arange(0.0001, 0.00015, 0.00001)
 LINKAGES = ['single', 'complete', 'average']
 
 
@@ -21,8 +21,8 @@ def experiment_config():
     name = 'CaBE - reverb45K'
     lm_model= BERT()
     file_name = DEFAULT_REVERB_PATH
-    threshold = .25
-    linkage = 'single'
+    threshold = .0003
+    linkage = 'complete'
     tune: False
 
 
