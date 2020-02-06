@@ -18,8 +18,8 @@ LINKAGES = ['single', 'complete', 'average']
 
 @ex.config
 def experiment_config():
-    model= BERT()
-    model_name = 'CaBE - reverb45K'
+    name = 'CaBE - reverb45K'
+    lm_model= BERT()
     file_name = DEFAULT_REVERB_PATH
     threshold = .25
     linkage = 'single'
@@ -27,19 +27,18 @@ def experiment_config():
 
 
 @ex.main
-def experiment_main(_run, name, model_name, file_name, threshold, linkage, tune):
+def experiment_main(_run, name, lm_model, file_name, threshold, linkage, tune):
     if not tune:
-        experiment_proc(_run, name, model_name, file_name, threshold, linkage)
+        experiment_proc(_run, name, lm_model, file_name, threshold, linkage)
     else:
         clustering_configs = product(THRESHOLDS, LINKAGES)
-        print(clustering_configs)
         for thd, link in clustering_configs:
-            experiment_proc(_run, name, model_name, file_name, thd, link)
+            experiment_proc(_run, name, lm_model, file_name, thd, link)
 
 
-def experiment_proc(_run, name, model_name, file_name, threshold, linkage):
+def experiment_proc(_run, name, lm_model, file_name, threshold, linkage):
     model = CaBE(name=name,
-                 model=model_name,
+                 model=lm_model,
                  file_name=file_name,
                  distance_threshold=threshold,
                  linkage=linkage)
