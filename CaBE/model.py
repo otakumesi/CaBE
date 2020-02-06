@@ -114,6 +114,6 @@ class CaBE():
         return self.__gold_ent2cluster
 
     def dump_clusters(self, clusters, prefix):
-        file_path = f'./data/{prefix}-{self.name}-threshold_{self.distance_threshold}.pkl'
+        file_path = f'./data/{prefix}-{self.name}-{self.linkage}-threshold_{self.distance_threshold}.pkl'
         pickle.dump(clusters, open(file_path, 'wb'))
 
