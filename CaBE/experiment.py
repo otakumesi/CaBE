@@ -48,31 +48,33 @@ def experiment_proc(_run, name, model_name, file_name, threshold, linkage):
     print("--- Start: evlaluate noun phrases ---")
     evl = Evaluator(ent_outputs, model.gold_ent2cluster)
 
+    step_name = f'{linkage}_{threshold}'
+
     print('Macro Precision: {}'.format(evl.macro_precision))
-    _run.log_scalar('Macro Precision', evl.macro_precision, threshold)
+    _run.log_scalar('Macro Precision', evl.macro_precision, step_name)
 
     print('Macro Recall: {}'.format(evl.macro_recall))
-    _run.log_scalar('Macro Recall', evl.macro_recall, threshold)
+    _run.log_scalar('Macro Recall', evl.macro_recall, step_name)
 
     print('Macro F1: {}'.format(evl.macro_f1_score))
-    _run.log_scalar('Macro F1', evl.macro_f1_score, threshold)
+    _run.log_scalar('Macro F1', evl.macro_f1_score, step_name)
 
     print('Micro Precision: {}'.format(evl.micro_precision))
-    _run.log_scalar('Micro Precision', evl.micro_precision, threshold)
+    _run.log_scalar('Micro Precision', evl.micro_precision, step_name)
 
     print('Micro Recall: {}'.format(evl.micro_recall))
-    _run.log_scalar('Micro Recall', evl.micro_recall, threshold)
+    _run.log_scalar('Micro Recall', evl.micro_recall, step_name)
 
     print('Micro F1: {}'.format(evl.micro_f1_score))
-    _run.log_scalar('Micro F1', evl.micro_f1_score, threshold)
+    _run.log_scalar('Micro F1', evl.micro_f1_score, step_name)
 
     print('Pairwise Precision: {}'.format(evl.pairwise_precision))
-    _run.log_scalar('Pairwise Precision', evl.pairwise_precision, threshold)
+    _run.log_scalar('Pairwise Precision', evl.pairwise_precision, step_name)
 
     print('Pairwise Recall: {}'.format(evl.pairwise_recall))
-    _run.log_scalar('Pairwise Recall', evl.pairwise_recall, threshold)
+    _run.log_scalar('Pairwise Recall', evl.pairwise_recall, step_name)
 
     print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
-    _run.log_scalar('Pairwise F1', evl.pairwise_f1_score, threshold)
+    _run.log_scalar('Pairwise F1', evl.pairwise_f1_score, step_name)
 
     print("--- End: evaluate noun phrases ---")
