@@ -12,9 +12,10 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-THRESHOLDS = np.arange(0.0000, 0.00005, 0.00001)
+THRESHOLDS = np.arange(0.0000, 0.00003, 0.00001)
 LINKAGES = ['single', 'complete', 'average']
 LMS = {'BERT': BERTEncoder, 'Elmo': None}
+LAYERS = range(1, 12)
 
 
 @ex.config
@@ -22,21 +23,22 @@ def experiment_config():
     name = 'CaBE - reverb45K'
     lm_name = 'BERT'
     file_name = DEFAULT_REVERB_PATH
-    threshold = .0003
+    threshold = .0000
     linkage = 'complete'
+    num_layers = 12
     tune = False
 
 
 @ex.main
-def experiment_main(_run, name, lm_name, file_name, threshold, linkage, tune):
+def experiment_main(_run, name, lm_name, file_name, threshold, linkage, num_layers, tune):
     lang_model = LMS[lm_name]()
     if not tune:
-        experiment_proc(_run, name, lang_model, file_name, threshold, linkage)
+        experiment_proc(_run, name, lang_model, file_name, threshold, linkage, num_layers)
     else:
-        clustering_configs = product(THRESHOLDS, LINKAGES)
+        clustering_configs = product(THRESHOLDS, LINKAGES, LAYERS)
         results = {}
-        for thd, link in clustering_configs:
-            macro_f1, micro_f1, pairwise_f1 = experiment_proc(_run, name, lang_model, file_name, thd, link)
+        for thd, link, layer in clustering_configs:
+            macro_f1, micro_f1, pairwise_f1 = experiment_proc(_run, name, lang_model, file_name, thd, link, layer)
             results[(link, thd)] = (macro_f1, micro_f1, pairwise_f1)
 
         sorted_configs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
@@ -44,13 +46,13 @@ def experiment_main(_run, name, lm_name, file_name, threshold, linkage, tune):
             print(f'{conf[0]}, {conf[1]:.5f}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
 
-def experiment_proc(_run, name, lang_model, file_name, threshold, linkage):
+def experiment_proc(_run, name, lang_model, file_name, threshold, linkage, num_layers):
     model = CaBE(name=name,
                  model=lang_model,
                  file_name=file_name,
                  distance_threshold=threshold,
                  linkage=linkage)
-    ent_outputs, rel_outputs = model.run()
+    ent_outputs, rel_outputs = model.run(num_layers)
 
     print("--- Start: evlaluate noun phrases ---")
     evl = Evaluator(ent_outputs, model.gold_ent2cluster)

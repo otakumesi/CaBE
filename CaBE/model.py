@@ -35,24 +35,24 @@ class CaBE():
         self.id2rel = {v: k for k, v in self.rel2id.items()}
         self.__gold_ent2cluster = gold_ent2cluster
 
-    def run(self):
+    def run(self, n_layers=12):
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode entities ---")
-        ent_pkl_path = f'./data/ent-{self.name}.pkl'
+        ent_pkl_path = f'./data/ent-{self.name}-{n_layers}.pkl'
         if os.path.isfile(ent_pkl_path):
             entities = pickle.load(open(ent_pkl_path, 'rb'))
         else:
-            entities = self.model.encode(self.entities)
+            entities = self.model.encode(self.entities, num_layers=n_layers)
             pickle.dump(entities, open(ent_pkl_path, 'wb'))
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
-        rel_pkl_path = f'./data/rel-{self.name}.pkl'
+        rel_pkl_path = f'./data/rel-{self.name}-{n_layers}.pkl'
         if os.path.isfile(rel_pkl_path):
             relations = pickle.load(open(rel_pkl_path, 'rb'))
         else:
-            relations = self.model.encode(self.relations)
+            relations = self.model.encode(self.relations, num_layers=n_layers)
             pickle.dump(relations, open(rel_pkl_path, 'wb'))
         print("--- End: encode relations ---")
 
