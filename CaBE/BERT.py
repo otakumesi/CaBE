@@ -21,7 +21,7 @@ class BERT:
     def encode(self, phrases):
         encoded_phrases = []
         for phrase in phrases:
-            input_ids = torch.tensor([self.tokenizer.encode(phrase, max_length=10, pad_to_max_length=True)])
+            input_ids = torch.tensor([self.tokenizer.encode(phrase, max_length=7, pad_to_max_length=True)])
             with torch.no_grad():
                 encoded_tokens = self.model(input_ids)[0].squeeze()
             encoded_phrase = torch.mean(encoded_tokens, 1)

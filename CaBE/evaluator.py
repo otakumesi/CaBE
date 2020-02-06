@@ -10,9 +10,6 @@ class Evaluator:
         self.gold_ele2cluster = gold_ele2cluster
         self.gold_cluster2ele = invert_ele2cluster(gold_ele2cluster)
 
-        for ele, cluster in gold_ele2cluster.items():
-            self.gold_cluster2ele[cluster].append(ele)
-
         self.calc_variables()
 
     def calc_variables(self):
@@ -95,7 +92,6 @@ def _pairwise_metrics(output_cluster2ele, gold_cluster2ele, gold_ele2cluster):
     num_hits = 0
     num_output_pairs = 0
     for cluster in output_cluster2ele.values():
-        # cluster & gold_cluster2eleでそもそもpairの集合からなくす?
         pairs = list(combinations(cluster, 2))
         num_output_pairs += len(pairs)
 
