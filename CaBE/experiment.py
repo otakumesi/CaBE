@@ -1,8 +1,9 @@
+import numpy as np
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
-from CaBE import CaBE
-from evaluator import np_evaluate
-from BERT import BERT
+from CaBE.model import CaBE
+from CaBE.evaluator import Evaluator
+from CaBE.BERT import BERT
 
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'

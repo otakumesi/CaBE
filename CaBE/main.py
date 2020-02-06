@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from experiment import ex
+from CaBE.experiment import ex
 
 
 if __name__ == '__main__':

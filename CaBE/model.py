@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 from collections import Counter
 
-from helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
+from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
 
 
 class CaBE():
@@ -35,7 +35,7 @@ class CaBE():
         self.__gold_ent2cluster = gold_ent2cluster
 
     def run(self):
-        print("----- Start: run COBB -----")
+        print("----- Start: run CaBE -----")
 
         print("--- Start: encode entities ---")
         ent_pkl_path = f'./data/ent-{self.name}.pkl'
@@ -61,7 +61,7 @@ class CaBE():
         self.dump_clusters(rel_outputs, 'rel')
         print("--- End: cluster phrases ---")
 
-        print("----- End: run COBB -----")
+        print("----- End: run CaBE -----")
 
         return output_ent2cluster, rel_outputs
 
