@@ -40,7 +40,7 @@ def extract_phrases(raw_triples):
 
 def canonical_phrases(clusters, id2phrase, id2freq):
     canonicalized_phrases = defaultdict(list)
-    for _, phrase_ids in clusters.items():
+    for phrase_ids in clusters.values():
         representative = id2phrase[phrase_ids[0]]
         cluster_phrases = set()
         for phrase_id in phrase_ids:

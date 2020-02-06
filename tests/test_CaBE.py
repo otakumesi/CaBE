@@ -77,16 +77,10 @@ def test_micro_recall(cluster_fixtures):
     assert micro_recall == (float(6) / float(7))
 
 
-def test_pairwise_precision(cluster_fixtures):
-    pairwise_precision = evl._pairwise_precision(
-        cluster_fixtures['output']['cluster2ent'],
-        cluster_fixtures['gold']['ent2cluster'])
-    assert pairwise_precision == (float(4) / float(6))
-
-
-def test_pairwise_recall(cluster_fixtures):
-    pairwise_recall = evl._pairwise_recall(
+def test_pairwise_metrics(cluster_fixtures):
+    pairwise_precision, pairwise_recall = evl._pairwise_metrics(
         cluster_fixtures['output']['cluster2ent'],
         cluster_fixtures['gold']['cluster2ent'],
         cluster_fixtures['gold']['ent2cluster'])
+    assert pairwise_precision == (float(4) / float(6))
     assert pairwise_recall == (float(4) / float(7))
