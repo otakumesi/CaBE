@@ -17,10 +17,10 @@ pytest = "^3.0"
 taskipy = "^1.1"
 
 [tool.taskipy.tasks]
-download = 'poetry run task download:test && poetry run task download:valid'
-download:test = 'wget https://github.com/malllabiisc/cesi/blob/master/data/reverb45k/reverb45k_test?raw=true -O ./data/reverb45k_test'
-download:valid = 'wget https://github.com/malllabiisc/cesi/blob/master/data/reverb45k/reverb45k_valid?raw=true -O ./data/reverb45k_valid'
-cache:clear = 'rm ./data/*.pkl'
+download = 'poetry run task download_test && poetry run task download_valid'
+download_test = 'wget https://github.com/malllabiisc/cesi/blob/master/data/reverb45k/reverb45k_test?raw=true -O ./data/reverb45k_test'
+download_valid = 'wget https://github.com/malllabiisc/cesi/blob/master/data/reverb45k/reverb45k_valid?raw=true -O ./data/reverb45k_valid'
+cache_clear = 'rm ./data/*.pkl'
 
 [build-system]
 requires = ["poetry>=0.12"]
