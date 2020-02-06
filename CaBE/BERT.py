@@ -19,6 +19,12 @@ class BERT:
             self.tokenizer.save_pretrained(SAVED_MODEL_PATH)
 
     def encode(self, phrases):
-        input_ids = torch.tensor([self.tokenizer.convert_tokens_to_ids(phrases)]).reshape(-1, 1)
-        with torch.no_grad():
-            return self.model(input_ids)[0].squeeze()
+        encoded_phrases = []
+        for phrase in phrases:
+            input_ids = torch.tensor([self.tokenizer.encode(phrase, max_length=10, pad_to_max_length=True)])
+            with torch.no_grad():
+                encoded_tokens = self.model(input_ids)[0].squeeze()
+            encoded_phrase = torch.mean(encoded_tokens, 1)
+            encoded_phrases.append(encoded_phrase)
+
+        return torch.stack(encoded_phrases, axis=0)

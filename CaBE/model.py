@@ -3,6 +3,7 @@ import os
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
+
 from collections import Counter
 
 from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
@@ -116,4 +117,3 @@ class CaBE():
     def dump_clusters(self, clusters, prefix):
         file_path = f'./data/{prefix}-{self.name}-{self.linkage}-threshold_{self.distance_threshold}.pkl'
         pickle.dump(clusters, open(file_path, 'wb'))
-
