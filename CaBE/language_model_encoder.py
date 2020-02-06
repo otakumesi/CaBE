@@ -5,7 +5,7 @@ from transformers import BertTokenizer, BertModel
 SAVED_MODEL_PATH = '/tmp/BERT_MODEL'
 
 
-class BERT:
+class BERTEncoder:
     def __init__(self):
         if os.path.exists(SAVED_MODEL_PATH) and os.listdir(SAVED_MODEL_PATH):
             self.model = BertModel.from_pretrained(SAVED_MODEL_PATH)
@@ -28,3 +28,11 @@ class BERT:
             encoded_phrases.append(encoded_phrase)
 
         return torch.stack(encoded_phrases, axis=0)
+
+
+class ElmoEncoder:
+    def __init__(self):
+        pass
+
+    def encode(self, phrases):
+        pass

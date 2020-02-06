@@ -4,7 +4,7 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
-from CaBE.BERT import BERT
+from CaBE.language_model_encoder import BERTEncoder
 
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
@@ -12,14 +12,15 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-THRESHOLDS = np.arange(0.0000, 0.00015, 0.00001)
-LINKAGES = ['single', 'complete', 'average']
+THRESHOLDS = np.arange(0.0000, 0.00005, 0.00001)
+LINKAGES = ['single', 'complete', 'average', 'ward']
+LMS = {'BERT': BERTEncoder, 'Elmo': None}
 
 
 @ex.config
 def experiment_config():
     name = 'CaBE - reverb45K'
-    lm_model = BERT()
+    lm_name = 'BERT'
     file_name = DEFAULT_REVERB_PATH
     threshold = .0003
     linkage = 'complete'
@@ -27,14 +28,15 @@ def experiment_config():
 
 
 @ex.main
-def experiment_main(_run, name, lm_model, file_name, threshold, linkage, tune):
+def experiment_main(_run, name, lm_name, file_name, threshold, linkage, tune):
+    lang_model = LMS[lm_name]()
     if not tune:
-        experiment_proc(_run, name, lm_model, file_name, threshold, linkage)
+        experiment_proc(_run, name, lang_model, file_name, threshold, linkage)
     else:
         clustering_configs = product(THRESHOLDS, LINKAGES)
         results = {}
         for thd, link in clustering_configs:
-            macro_f1, micro_f1, pairwise_f1 = experiment_proc(_run, name, lm_model, file_name, thd, link)
+            macro_f1, micro_f1, pairwise_f1 = experiment_proc(_run, name, lang_model, file_name, thd, link)
             results[(link, thd)] = (macro_f1, micro_f1, pairwise_f1)
 
         sorted_configs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
@@ -42,9 +44,9 @@ def experiment_main(_run, name, lm_model, file_name, threshold, linkage, tune):
             print(f'{conf[0]}, {conf[1]:.5f}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
 
-def experiment_proc(_run, name, lm_model, file_name, threshold, linkage):
+def experiment_proc(_run, name, lang_model, file_name, threshold, linkage):
     model = CaBE(name=name,
-                 model=lm_model,
+                 model=lang_model,
                  file_name=file_name,
                  distance_threshold=threshold,
                  linkage=linkage)
