@@ -18,57 +18,49 @@ LINKAGES = ['single', 'complete', 'average']
 @ex.config
 def experiment_config():
     model= BERT()
-    name = 'CaBE - reverb45K'
+    model_name = 'CaBE - reverb45K'
     file_name = DEFAULT_REVERB_PATH
     threshold = .25
     linkage = 'single'
 
 
 @ex.main
-def experiment_main(_run, name, model, file_name, threshold, linkage):
-    cabe = CaBE(name=name,
-                model=model,
-                file_name=file_name,
-                distance_threshold=threshold)
-    ent_outputs, rel_outputs = cabe.run()
+def experiment_main(_run, name, model_name, file_name, threshold, linkage):
+    model = CaBE(name=name,
+                 model=model_name,
+                 file_name=file_name,
+                 distance_threshold=threshold,
+                 linkage=linkage)
+    ent_outputs, rel_outputs = model.run()
 
     print("--- Start: evlaluate noun phrases ---")
-    evl = Evaluator(ent_outputs, cabe.gold_ent2cluster)
+    evl = Evaluator(ent_outputs, model.gold_ent2cluster)
 
-    macro_precision = evl.macro_precision()
-    print('Macro Precision: {}'.format(macro_precision))
-    _run.log_scalar('Macro Precision', macro_precision, threshold)
+    print('Macro Precision: {}'.format(evl.macro_precision))
+    _run.log_scalar('Macro Precision', evl.macro_precision, threshold)
 
-    macro_recall = evl.macro_recall()
-    print('Macro Recall: {}'.format(macro_recall))
-    _run.log_scalar('Macro Recall', macro_recall, threshold)
+    print('Macro Recall: {}'.format(evl.macro_recall))
+    _run.log_scalar('Macro Recall', evl.macro_recall, threshold)
 
-    macro_f1 = evl.macro_f1_score()
-    print('Macro F1: {}'.format(macro_f1))
-    _run.log_scalar('Macro F1', macro_f1, threshold)
+    print('Macro F1: {}'.format(evl.macro_f1_score))
+    _run.log_scalar('Macro F1', evl.macro_f1_score, threshold)
 
-    micro_precision = evl.micro_precision()
-    print('Micro Precision: {}'.format(micro_precision))
-    _run.log_scalar('Micro Precision', micro_precision, threshold)
+    print('Micro Precision: {}'.format(evl.micro_precision))
+    _run.log_scalar('Micro Precision', evl.micro_precision, threshold)
 
-    micro_recall = evl.micro_recall()
-    print('Micro Recall: {}'.format(micro_recall))
-    _run.log_scalar('Micro Recall', micro_recall, threshold)
+    print('Micro Recall: {}'.format(evl.micro_recall))
+    _run.log_scalar('Micro Recall', evl.micro_recall, threshold)
 
-    micro_f1 = evl.micro_f1_score()
-    print('Micro F1: {}'.format(micro_f1))
-    _run.log_scalar('Micro F1', micro_f1, threshold)
+    print('Micro F1: {}'.format(evl.micro_f1_score))
+    _run.log_scalar('Micro F1', evl.micro_f1_score, threshold)
 
-    pairwise_precision = evl.pairwise_precision()
-    print('Pairwise Precision: {}'.format(pairwise_precision))
-    _run.log_scalar('Pairwise Precision', pairwise_precision, threshold)
+    print('Pairwise Precision: {}'.format(evl.pairwise_precision))
+    _run.log_scalar('Pairwise Precision', evl.pairwise_precision, threshold)
 
-    pairwise_recall = evl.pairwise_recall()
-    print('Pairwise Recall: {}'.format(pairwise_recall))
-    _run.log_scalar('Pairwise Recall', pairwise_recall, threshold)
+    print('Pairwise Recall: {}'.format(evl.pairwise_recall))
+    _run.log_scalar('Pairwise Recall', evl.pairwise_recall, threshold)
 
-    pairwise_f1 = evl.pairwise_f1_score()
-    print('Pairwise F1: {}'.format(pairwise_f1))
-    _run.log_scalar('Pairwise F1', pairwise_f1, threshold)
+    print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
+    _run.log_scalar('Pairwise F1', evl.pairwise_f1_score, threshold)
 
     print("--- End: evaluate noun phrases ---")

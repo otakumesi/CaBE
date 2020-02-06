@@ -5,29 +5,29 @@ from collections import defaultdict
 class Evaluator:
     def __init__(self, output_ele2cluster, gold_ele2cluster):
         self.output_ele2cluster = output_ele2cluster
-        self.output_cluster2ent = invert_ele2cluster(output_ele2cluster)
+        self.output_cluster2ele = invert_ele2cluster(output_ele2cluster)
 
         self.gold_ele2cluster = gold_ele2cluster
-        self.gold_cluster2ent = invert_ele2cluster(gold_ele2cluster)
+        self.gold_cluster2ele = invert_ele2cluster(gold_ele2cluster)
 
-        for ent, cluster in gold_ele2cluster.items():
-            self.gold_cluster2ent[cluster].append(ent)
+        for ele, cluster in gold_ele2cluster.items():
+            self.gold_cluster2ele[cluster].append(ele)
 
         self.calc_variables()
 
     def calc_variables(self):
         self.macro_precision = _macro_precision(
-            self.output_cluster2ent, self.gold_ele2cluster)
+            self.output_cluster2ele, self.gold_ele2cluster)
         self.macro_recall = _macro_precision(
-            self.gold_cluster2ent, self.output_ele2cluster)
+            self.gold_cluster2ele, self.output_ele2cluster)
         self.micro_precision = _micro_precision(
-            self.output_cluster2ent, self.gold_ele2cluster)
+            self.output_cluster2ele, self.gold_ele2cluster)
         self.micro_recall = _micro_precision(
-            self.gold_cluster2ent, self.output_ele2cluster)
+            self.gold_cluster2ele, self.output_ele2cluster)
         self.pairwise_precision, self.pairwise_recall = _pairwise_metrics(
-            self.output_cluster2ent,
-            self.gold_cluster2ent,
-            self.gold_ent2cluster)
+            self.output_cluster2ele,
+            self.gold_cluster2ele,
+            self.gold_ele2cluster)
 
     @property
     def macro_f1_score(self):
@@ -78,10 +78,10 @@ def _micro_precision(output_cluster2ele, gold_ele2cluster):
         freq_map = defaultdict(int)
         total += len(cluster)
 
-        for ent in cluster:
-            if ent not in gold_ele2cluster:
+        for ele in cluster:
+            if ele not in gold_ele2cluster:
                 continue
-            freq_map[gold_ele2cluster[ent]] += 1
+            freq_map[gold_ele2cluster[ele]] += 1
 
         num_prec += max(freq_map.values())
 
@@ -91,28 +91,28 @@ def _micro_precision(output_cluster2ele, gold_ele2cluster):
     return float(num_prec) / float(total)
 
 
-def _pairwise_metrics(output_cluster2ent, gold_cluster2ent, gold_ent2cluster):
+def _pairwise_metrics(output_cluster2ele, gold_cluster2ele, gold_ele2cluster):
     num_hits = 0
     num_output_pairs = 0
-    for cluster in output_cluster2ent.values():
-        # cluster & gold_cluster2entでそもそもpairの集合からなくす?
+    for cluster in output_cluster2ele.values():
+        # cluster & gold_cluster2eleでそもそもpairの集合からなくす?
         pairs = list(combinations(cluster, 2))
         num_output_pairs += len(pairs)
 
         for e_1, e_2 in pairs:
-            if gold_ent2cluster[e_1] != gold_ent2cluster[e_2]:
+            if gold_ele2cluster[e_1] != gold_ele2cluster[e_2]:
                 continue
 
-            if e_1 not in gold_ent2cluster:
+            if e_1 not in gold_ele2cluster:
                 continue
 
-            if e_2 not in gold_ent2cluster:
+            if e_2 not in gold_ele2cluster:
                 continue
 
             num_hits += 1
 
     num_gold_pairs = 0
-    for cluster in gold_cluster2ent.values():
+    for cluster in gold_cluster2ele.values():
         num_gold_pairs += len(list(combinations(cluster, 2)))
 
     if num_output_pairs == 0 or num_gold_pairs == 0:

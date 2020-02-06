@@ -94,7 +94,7 @@ class CaBE():
     def __cluster_entities(self, entities):
         entity_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
-
+            n_clusters=None,
             affinity="cosine",
             linkage=self.linkage)
         assigned_clusters = entity_cluster.fit_predict(entities)
