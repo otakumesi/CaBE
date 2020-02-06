@@ -13,7 +13,7 @@ ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
 THRESHOLDS = np.arange(0.0000, 0.00005, 0.00001)
-LINKAGES = ['single', 'complete', 'average', 'ward']
+LINKAGES = ['single', 'complete', 'average']
 LMS = {'BERT': BERTEncoder, 'Elmo': None}
 
 
