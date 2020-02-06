@@ -12,7 +12,7 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-THRESHOLDS = np.arange(0.0, 1.0, 0.1)
+THRESHOLDS = np.arange(0.001, 0.002, 0.0001)
 LINKAGES = ['single', 'complete', 'average']
 
 
