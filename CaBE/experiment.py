@@ -1,3 +1,4 @@
+from itertools import product
 import numpy as np
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
@@ -22,10 +23,21 @@ def experiment_config():
     file_name = DEFAULT_REVERB_PATH
     threshold = .25
     linkage = 'single'
+    tune: False
 
 
 @ex.main
-def experiment_main(_run, name, model_name, file_name, threshold, linkage):
+def experiment_main(_run, name, model_name, file_name, threshold, linkage, tune):
+    if not tune:
+        experiment_proc(_run, name, model_name, file_name, threshold, linkage)
+    else:
+        clustering_configs = product(THRESHOLDS, LINKAGES)
+        print(clustering_configs)
+        for thd, link in clustering_configs:
+            experiment_proc(_run, name, model_name, file_name, thd, link)
+
+
+def experiment_proc(_run, name, model_name, file_name, threshold, linkage):
     model = CaBE(name=name,
                  model=model_name,
                  file_name=file_name,
