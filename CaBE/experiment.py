@@ -39,11 +39,11 @@ def experiment_main(_run, name, lm_name, file_name, threshold, linkage, num_laye
         results = {}
         for thd, link, layer in clustering_configs:
             macro_f1, micro_f1, pairwise_f1 = experiment_proc(_run, name, lm_name, lang_model, file_name, thd, link, layer)
-            results[(link, thd)] = (macro_f1, micro_f1, pairwise_f1)
+            results[(link, thd, layer)] = (macro_f1, micro_f1, pairwise_f1)
 
         sorted_configs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
         for conf, f1s in sorted_configs:
-            print(f'{conf[0]}, {conf[1]:.5f}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
+            print(f'{lm_name}, {conf[2]}, {conf[0]}, {conf[1]:.5f}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
 
 def experiment_proc(_run, name, lm_name, lang_model, file_name, threshold, linkage, num_layers):
