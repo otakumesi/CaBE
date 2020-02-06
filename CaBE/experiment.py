@@ -12,18 +12,18 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-THRESHOLDS = np.arange(0.0001, 0.00015, 0.00001)
+THRESHOLDS = np.arange(0.0000, 0.00015, 0.00001)
 LINKAGES = ['single', 'complete', 'average']
 
 
 @ex.config
 def experiment_config():
     name = 'CaBE - reverb45K'
-    lm_model= BERT()
+    lm_model = BERT()
     file_name = DEFAULT_REVERB_PATH
     threshold = .0003
     linkage = 'complete'
-    tune: False
+    tune = False
 
 
 @ex.main
@@ -32,8 +32,14 @@ def experiment_main(_run, name, lm_model, file_name, threshold, linkage, tune):
         experiment_proc(_run, name, lm_model, file_name, threshold, linkage)
     else:
         clustering_configs = product(THRESHOLDS, LINKAGES)
+        results = {}
         for thd, link in clustering_configs:
-            experiment_proc(_run, name, lm_model, file_name, thd, link)
+            macro_f1, micro_f1, pairwise_f1 = experiment_proc(_run, name, lm_model, file_name, thd, link)
+            results[(link, thd)] = (macro_f1, micro_f1, pairwise_f1)
+
+        sorted_configs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
+        for conf, f1s in sorted_configs:
+            print(f'{conf[0]}, {conf[1]:.5f}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
 
 def experiment_proc(_run, name, lm_model, file_name, threshold, linkage):
@@ -77,3 +83,5 @@ def experiment_proc(_run, name, lm_model, file_name, threshold, linkage):
     _run.log_scalar('Pairwise F1', evl.pairwise_f1_score, step_name)
 
     print("--- End: evaluate noun phrases ---")
+
+    return evl.macro_f1_score, evl.micro_f1_score, evl.pairwise_f1_score

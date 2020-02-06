@@ -61,8 +61,6 @@ def _macro_precision(output_cluster2ele, gold_ele2cluster):
 
         if len(res) == 1:
             prec_numer += 1
-        # elif len(res) > 1:
-        #     print('Error In Clustering micro')
 
     return float(prec_numer) / float(prec_denom)
 
