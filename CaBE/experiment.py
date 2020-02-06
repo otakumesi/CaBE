@@ -15,7 +15,7 @@ ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 THRESHOLDS = np.arange(0.0000, 0.00003, 0.00001)
 LINKAGES = ['single', 'complete', 'average']
 LMS = {'BERT': BERTEncoder, 'Elmo': None}
-LAYERS = range(1, 12)
+LAYERS = range(1, 13)
 
 
 @ex.config
