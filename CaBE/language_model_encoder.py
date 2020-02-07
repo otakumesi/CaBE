@@ -2,23 +2,25 @@ import os
 import torch
 from transformers import BertTokenizer, BertModel
 
-SAVED_MODEL_PATH = '/tmp/BERT_MODEL'
-PRETRAINED_NAME = 'bert-large-uncased'
+SAVED_MODEL_PATH = '/tmp/MODEL'
+PRETRAINED_BERT_NAME = 'bert-large-uncased'
 
 
 class BertEncoder:
-    def __init__(self):
-        path = f'{SAVED_MODEL_PATH}-{PRETRAINED_NAME}'
+    def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
+        path = f'{SAVED_MODEL_PATH}-{pretrained_name}'
         if os.path.exists(path) and os.listdir(path):
-            self.model = BertModel.from_pretrained(SAVED_MODEL_PATH, output_hidden_states=True)
-            self.tokenizer = BertTokenizer.from_pretrained(SAVED_MODEL_PATH)
+            self.model = BertModel.from_pretrained(path,
+                                                   output_hidden_states=True)
+            self.tokenizer = BertTokenizer.from_pretrained(path)
         else:
-            self.model = BertModel.from_pretrained(PRETRAINED_NAME, output_hidden_states=True)
-            self.tokenizer = BertTokenizer.from_pretrained(PRETRAINED_NAME)
+            self.model = BertModel.from_pretrained(pretrained_name,
+                                                   output_hidden_states=True)
+            self.tokenizer = BertTokenizer.from_pretrained(pretrained_name)
 
-            os.makedirs(SAVED_MODEL_PATH, exist_ok=True)
-            self.model.save_pretrained(SAVED_MODEL_PATH)
-            self.tokenizer.save_pretrained(SAVED_MODEL_PATH)
+            os.makedirs(path, exist_ok=True)
+            self.model.save_pretrained(path)
+            self.tokenizer.save_pretrained(path)
 
     def encode(self, phrases, num_layers=12):
         encoded_phrases = []
