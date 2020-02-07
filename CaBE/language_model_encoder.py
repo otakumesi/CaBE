@@ -3,16 +3,18 @@ import torch
 from transformers import BertTokenizer, BertModel
 
 SAVED_MODEL_PATH = '/tmp/BERT_MODEL'
+PRETRAINED_NAME = 'bert-large-uncased'
 
 
-class BERTEncoder:
+class BertEncoder:
     def __init__(self):
-        if os.path.exists(SAVED_MODEL_PATH) and os.listdir(SAVED_MODEL_PATH):
+        path = f'{SAVED_MODEL_PATH}-{PRETRAINED_NAME}'
+        if os.path.exists(path) and os.listdir(path):
             self.model = BertModel.from_pretrained(SAVED_MODEL_PATH, output_hidden_states=True)
             self.tokenizer = BertTokenizer.from_pretrained(SAVED_MODEL_PATH)
         else:
-            self.model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
-            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            self.model = BertModel.from_pretrained(PRETRAINED_NAME, output_hidden_states=True)
+            self.tokenizer = BertTokenizer.from_pretrained(PRETRAINED_NAME)
 
             os.makedirs(SAVED_MODEL_PATH, exist_ok=True)
             self.model.save_pretrained(SAVED_MODEL_PATH)

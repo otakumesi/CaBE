@@ -4,7 +4,7 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
-from CaBE.language_model_encoder import BERTEncoder
+from CaBE.language_model_encoder import BertEncoder
 
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
@@ -12,7 +12,7 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-LMS = {'BERT': BERTEncoder, 'Elmo': None}
+LMS = {'BERT': BertEncoder, 'Elmo': None}
 
 
 @ex.config
