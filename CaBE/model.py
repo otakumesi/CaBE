@@ -4,13 +4,14 @@ import os
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 
+
 from collections import Counter
 
 from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
 
 
 class CaBE():
-    def __init__(self, name, model, file_name, distance_threshold=.25, linkage='single'):
+    def __init__(self, name, model, file_name, distance_threshold, linkage):
         self.name = name
         self.model = model
         self.distance_threshold = distance_threshold
@@ -39,7 +40,7 @@ class CaBE():
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode entities ---")
-        ent_pkl_path = f'./data/ent-{self.name}-{n_layers}.pkl'
+        ent_pkl_path = f'./data/ent-{self.name}.pkl'
         if os.path.isfile(ent_pkl_path):
             entities = pickle.load(open(ent_pkl_path, 'rb'))
         else:
@@ -48,7 +49,7 @@ class CaBE():
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
-        rel_pkl_path = f'./data/rel-{self.name}-{n_layers}.pkl'
+        rel_pkl_path = f'./data/rel-{self.name}.pkl'
         if os.path.isfile(rel_pkl_path):
             relations = pickle.load(open(rel_pkl_path, 'rb'))
         else:
