@@ -23,15 +23,15 @@ def experiment_config():
     # Config for main
     num_layers = 12
     threshold = .0000
-    linkage = 'complete'
+    linkage = 'average'
 
     # Config for grid_search
     min_threshold = 0.00000
-    max_threshold = 0.00001
-    threshold_step = 0.000001
-    min_layer = 1
+    max_threshold = 0.01000
+    threshold_step = 0.001000
+    min_layer = 10
     max_layer = 12
-    linkages = ['single', 'complete', 'average']
+    linkages = ['average', 'single', 'complete']
 
 
 @ex.automain

@@ -6,7 +6,7 @@ import torch
 from transformers import BertTokenizer, BertModel
 
 SAVED_MODEL_PATH = '/tmp/MODEL'
-PRETRAINED_BERT_NAME = 'bert-base-uncased'
+PRETRAINED_BERT_NAME = 'bert-large-uncased'
 
 
 class BertEncoder:
@@ -26,8 +26,6 @@ class BertEncoder:
             self.tokenizer.save_pretrained(path)
 
     def encode(self, phrases, num_layers=12):
-        encoded_phrases = []
-
         token_ids_per_phrase = []
         for phrase in phrases:
             token_ids_per_phrase.append(
@@ -38,16 +36,17 @@ class BertEncoder:
 
         token_idfs = calc_token_idfs(token_ids_per_phrase)
 
+        encoded_phrases = []
         for token_ids in token_ids_per_phrase:
             with torch.no_grad():
                 _, _, hidden_states = self.model(token_ids.unsqueeze(0))
                 encoded_tokens = hidden_states[num_layers].squeeze()
-                weights_by_idf = [token_idfs[int(tid)]+1 for tid in token_ids]
-                weighted_tensor = torch.tensor(weights_by_idf, dtype=torch.long).view(-1, 1)
+                weights_by_idf = [token_idfs[int(tid)]+1.0 for tid in token_ids]
+                weighted_tensor = torch.tensor(weights_by_idf, dtype=torch.double).view(-1, 1)
 
-                sum_of_weighted_tokens = torch.sum(encoded_tokens * weighted_tensor, axis=1)
-                encoded_phrase = sum_of_weighted_tokens / torch.sum(weighted_tensor)
-            encoded_phrases.append(encoded_phrase)
+                weighted_sum_of_tokens = torch.sum(encoded_tokens * weighted_tensor, axis=1)
+                encoded_phrase = weighted_sum_of_tokens / torch.sum(weighted_tensor)
+                encoded_phrases.append(encoded_phrase)
 
         return torch.stack(encoded_phrases, axis=0)
 
