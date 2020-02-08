@@ -22,6 +22,8 @@ class CaBE():
         raw_triples = read_triples(file_path)
         raw_ents, raw_rels, gold_ent2cluster = extract_phrases(raw_triples)
 
+        self.file_path = file_path
+
         self.triples = raw_triples
 
         self.ent2freq = Counter(raw_ents)
@@ -40,7 +42,7 @@ class CaBE():
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode entities ---")
-        ent_pkl_path = f'./data/ent-{self.name}.pkl'
+        ent_pkl_path = f'{self.file_path}_ent_{self.name}.pkl'
         if os.path.isfile(ent_pkl_path):
             entities = pickle.load(open(ent_pkl_path, 'rb'))
         else:
@@ -49,7 +51,7 @@ class CaBE():
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
-        rel_pkl_path = f'./data/rel-{self.name}.pkl'
+        rel_pkl_path = f'{self.file_path}_rel_{self.name}.pkl'
         if os.path.isfile(rel_pkl_path):
             relations = pickle.load(open(rel_pkl_path, 'rb'))
         else:
