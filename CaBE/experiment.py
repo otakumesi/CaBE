@@ -9,7 +9,7 @@ from CaBE.language_model_encoder import BertEncoder, ElmoEncoder
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
 DEFAULT_LOG_PATH = './log'
-ex = Experiment('CaBE Expriment')
+ex = Experiment('CaBE Experiment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
 LMS = {'BERT': BertEncoder, 'Elmo': ElmoEncoder}

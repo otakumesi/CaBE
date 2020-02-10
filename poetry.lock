@@ -362,6 +362,14 @@ six = "*"
 
 [[package]]
 category = "main"
+description = "A content-addressable file management system."
+name = "hashfs"
+optional = false
+python-versions = "*"
+version = "0.7.2"
+
+[[package]]
+category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -1207,6 +1215,25 @@ cuda92 = ["thinc-gpu-ops (>=0.0.1,<0.1.0)", "cupy-cuda92 (>=5.0.0b4)"]
 
 [[package]]
 category = "main"
+description = "TinyDB is a tiny, document oriented database optimized for your happiness :)"
+name = "tinydb"
+optional = false
+python-versions = "*"
+version = "3.15.2"
+
+[[package]]
+category = "main"
+description = "Serialization for objects that TinyDB otherwise couldn't handle"
+name = "tinydb-serialization"
+optional = false
+python-versions = "*"
+version = "1.0.4"
+
+[package.dependencies]
+tinydb = ">=2.2.1"
+
+[[package]]
+category = "main"
 description = "Fast and Customizable Tokenizers"
 name = "tokenizers"
 optional = false
@@ -1370,7 +1397,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "3fcf5ee6f701fc469f6bebf56fa942ddb5231ee02753f3951770c0f36b4a37ec"
+content-hash = "ab76c175867d318b4c904e2d3b28087a487e29c46582a16ad11103e7458cbbc8"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1643,6 +1670,10 @@ h5py = [
     {file = "h5py-2.10.0-cp38-cp38-win32.whl", hash = "sha256:6ef7ab1089e3ef53ca099038f3c0a94d03e3560e6aff0e9d6c64c55fb13fc681"},
     {file = "h5py-2.10.0-cp38-cp38-win_amd64.whl", hash = "sha256:769e141512b54dee14ec76ed354fcacfc7d97fea5a7646b709f7400cf1838630"},
     {file = "h5py-2.10.0.tar.gz", hash = "sha256:84412798925dc870ffd7107f045d7659e60f5d46d1c70c700375248bf6bf512d"},
+]
+hashfs = [
+    {file = "hashfs-0.7.2-py2.py3-none-any.whl", hash = "sha256:3014a9b8dfafd1989cb9727c8b44c871f5b040bc144ec26aed3282ce519349b1"},
+    {file = "hashfs-0.7.2.tar.gz", hash = "sha256:b0986e66eb8500a7e963c0555731fec6b723e6a08e4ad228d29ad3dbf9428bf5"},
 ]
 idna = [
     {file = "idna-2.8-py2.py3-none-any.whl", hash = "sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"},
@@ -2168,6 +2199,13 @@ thinc = [
     {file = "thinc-7.0.8-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:3894eae850735d6033ca33f3f4fb61e35650ae33533e7d6b9b956a567dbe0db1"},
     {file = "thinc-7.0.8-cp37-cp37m-win_amd64.whl", hash = "sha256:f27e0fe9b1e4be2eb0ff95112a9cbcd79e1614d25b8bae6f2e8e2b727c2a2fe6"},
     {file = "thinc-7.0.8.tar.gz", hash = "sha256:5cdb72e8efec0e7b6efae09a09245d744f144114048f63f1ed4b63b8656d2aa4"},
+]
+tinydb = [
+    {file = "tinydb-3.15.2-py2.py3-none-any.whl", hash = "sha256:1087ade5300c47dbf9539d9f6dafd53115bd5e85a67d480d8188bdbfa2d9eaf4"},
+    {file = "tinydb-3.15.2.tar.gz", hash = "sha256:f273d9b6d8b1b5e1d094a6eb8b72851b39b81099293344132c73332b60e3b893"},
+]
+tinydb-serialization = [
+    {file = "tinydb-serialization-1.0.4.zip", hash = "sha256:25940236a83825cef72431c96599bdaab445e34bde4f907c2be2ad91daa41581"},
 ]
 tokenizers = [
     {file = "tokenizers-0.0.11-cp35-cp35m-macosx_10_13_x86_64.whl", hash = "sha256:1385deb90ec76cbee59b50298c8d2dc5909cda080a706d263e4f81c8474ba53d"},

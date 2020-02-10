@@ -182,3 +182,4 @@ flycheck_*.el
 /log
 /data/*
 !.gitkeep
+/record
