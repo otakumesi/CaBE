@@ -4,7 +4,7 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
-from CaBE.language_model_encoder import BertEncoder
+from CaBE.language_model_encoder import BertEncoder, ElmoEncoder
 
 
 DEFAULT_REVERB_PATH = './data/reverb45k_test'
@@ -12,7 +12,7 @@ DEFAULT_LOG_PATH = './log'
 ex = Experiment('CaBE Expriment')
 ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
 
-LMS = {'BERT': BertEncoder, 'Elmo': None}
+LMS = {'BERT': BertEncoder, 'Elmo': ElmoEncoder}
 
 
 @ex.config
@@ -21,7 +21,7 @@ def experiment_config():
     lm_name = 'BERT'
 
     # Config for main
-    num_layers = 12
+    num_layer = None
     threshold = .0000
     linkage = 'average'
 
@@ -29,29 +29,29 @@ def experiment_config():
     min_threshold = 0.00000
     max_threshold = 0.01000
     threshold_step = 0.001000
-    min_layer = 10
-    max_layer = 12
+    min_layer = 0
+    max_layer = None
     linkages = ['average', 'single', 'complete']
 
 
 @ex.automain
 def main(_run, _config):
     lm_name = _config['lm_name']
-    num_layers = _config["num_layers"]
     linkage = _config["linkage"]
     threshold = _config["threshold"]
 
     lang_model = LMS[lm_name]()
+    num_layer = _config["num_layer"] or lang_model.default_max_layer()
 
-    name = f'{lm_name}_{num_layers}'
+    name = f'{lm_name}_{num_layer}'
     model = build_model(name=name,
                         lang_model=lang_model,
                         file_name=_config['file_name'],
                         threshold=threshold,
                         linkage=linkage)
-    log_name = f'{lm_name}_{num_layers}_{linkage}_{threshold}'
+    log_name = f'{lm_name}_{num_layer}_{linkage}_{threshold}'
 
-    experiment(_run, model, log_name, num_layers)
+    experiment(_run, model, log_name, num_layer)
 
 
 @ex.command
@@ -59,11 +59,14 @@ def grid_search(_run, _config):
     thresholds = np.arange(_config['min_threshold'],
                            _config['max_threshold'],
                            _config['threshold_step'])
-    layers = range(_config['min_layer'], _config['max_layer']+1)
 
-    clustering_configs = product(thresholds, _config['linkages'], layers)
     lm_name = _config["lm_name"]
     lang_model = LMS[lm_name]()
+
+    max_layer = _config['max_layer'] or lang_model.default_max_layer()
+    layers = range(_config['min_layer'], max_layer+1)
+
+    clustering_configs = product(thresholds, _config['linkages'], layers)
 
     results = {}
     for thd, link, layer in clustering_configs:
@@ -75,7 +78,10 @@ def grid_search(_run, _config):
                             linkage=link)
 
         log_name = f'{lm_name}_{layer}_{link}_{thd:.5f}'
-        macro_f1, micro_f1, pairwise_f1 = experiment(_run, model, log_name, layer)
+        macro_f1, micro_f1, pairwise_f1 = experiment(_run,
+                                                     model,
+                                                     log_name,
+                                                     layer)
         results[log_name] = (macro_f1, micro_f1, pairwise_f1)
 
     sorted_confs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
@@ -91,8 +97,8 @@ def build_model(name, lang_model, file_name, threshold, linkage):
                 linkage=linkage)
 
 
-def experiment(_run, model, log_name, num_layers):
-    ent_outputs, rel_outputs = model.run(num_layers)
+def experiment(_run, model, log_name, num_layer):
+    ent_outputs, rel_outputs = model.run(num_layer)
 
     print("--- Start: evlaluate noun phrases ---")
     evl = Evaluator(ent_outputs, model.gold_ent2cluster)

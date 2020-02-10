@@ -4,9 +4,16 @@ from collections import defaultdict
 import numpy as np
 import torch
 from transformers import BertTokenizer, BertModel
+from allennlp.commands.elmo import ElmoEmbedder
 
 SAVED_MODEL_PATH = '/tmp/MODEL'
 PRETRAINED_BERT_NAME = 'bert-large-uncased'
+PRETRAINED_ELMO_OPTION_URL = "https://s3-us-west-2.amazonaws.com/"\
+    "allennlp/models/elmo/2x4096_512_2048cnn_2xhighway_5.5B/"\
+    "elmo_2x4096_512_2048cnn_2xhighway_5.5B_options.json"
+PRETRAINED_ELMO_WEIGHT_URL = "https://s3-us-west-2.amazonaws.com/"\
+    "allennlp/models/elmo/2x4096_512_2048cnn_2xhighway_5.5B/"\
+    "elmo_2x4096_512_2048cnn_2xhighway_5.5B_weights.hdf5"
 
 
 class BertEncoder:
@@ -25,47 +32,37 @@ class BertEncoder:
             self.model.save_pretrained(path)
             self.tokenizer.save_pretrained(path)
 
-    def encode(self, phrases, num_layers=12):
-        token_ids_per_phrase = []
-        for phrase in phrases:
-            token_ids_per_phrase.append(
-                torch.tensor(self.tokenizer.encode(phrase,
-                                                   max_length=7,
-                                                   pad_to_max_length=True),
-                             dtype=torch.long))
-
-        token_idfs = calc_token_idfs(token_ids_per_phrase)
-
+    def encode(self, phrases, num_layer=12):
         encoded_phrases = []
-        for token_ids in token_ids_per_phrase:
+
+        for phrase in phrases:
+            token_ids = torch.tensor(
+                self.tokenizer.encode(phrase,
+                                      max_length=7,
+                                      pad_to_max_length=True),
+                dtype=torch.long)
+
             with torch.no_grad():
                 _, _, hidden_states = self.model(token_ids.unsqueeze(0))
-                encoded_tokens = hidden_states[num_layers].squeeze()
-                weights_by_idf = [token_idfs[int(tid)]+1.0 for tid in token_ids]
-                weighted_tensor = torch.tensor(weights_by_idf, dtype=torch.double).view(-1, 1)
-
-                weighted_sum_of_tokens = torch.sum(encoded_tokens * weighted_tensor, axis=1)
-                encoded_phrase = weighted_sum_of_tokens / torch.sum(weighted_tensor)
+                # TODO: 隠れ層をそもそもdumpするようにしてしまう？
+                encoded_phrase = hidden_states[num_layer].squeeze()
                 encoded_phrases.append(encoded_phrase)
-
         return torch.stack(encoded_phrases, axis=0)
 
-
-def calc_token_idfs(token_ids_per_phrase):
-    num_phrases = len(token_ids_per_phrase)
-    token_dfs = defaultdict(int)
-
-    for token_ids in token_ids_per_phrase:
-        for token_id in token_ids.unique():
-            token_dfs[int(token_id)] += 1
-
-    token_idfs = {k: np.log(num_phrases / v) for k, v in token_dfs.items()}
-    return token_idfs
+    @classmethod
+    def default_max_layer(cls):
+        return 12
 
 
 class ElmoEncoder:
     def __init__(self):
-        pass
+        self.model = ElmoEmbedder(PRETRAINED_ELMO_OPTION_URL,
+                                  PRETRAINED_ELMO_WEIGHT_URL)
 
-    def encode(self, phrases):
-        pass
+    def encode(self, phrases, num_layer=2):
+        encoded_phrases = self.model.embed_sentence(phrases)
+        return encoded_phrases[num_layer]
+
+    @classmethod
+    def default_max_layer(cls):
+        return 2
