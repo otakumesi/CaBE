@@ -1,16 +1,13 @@
 import pickle
-import os
+from collections import Counter
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 
-
-from collections import Counter
-
 from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
 
 
-class CaBE():
+class CaBE:
     def __init__(self, name, model, file_name, distance_threshold, linkage):
         self.name = name
         self.model = model
@@ -42,21 +39,17 @@ class CaBE():
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode entities ---")
-        ent_pkl_path = f'{self.file_path}_ent_{self.name}.pkl'
-        if os.path.isfile(ent_pkl_path):
-            entities = pickle.load(open(ent_pkl_path, 'rb'))
-        else:
-            entities = self.model.encode(self.entities, num_layer=num_layer)
-            pickle.dump(entities, open(ent_pkl_path, 'wb'))
+        ent_pkl_path = f'{self.file_path}_ent_{self.name}'
+        entities = self.model.encode(self.entities,
+                                     num_layer=num_layer,
+                                     file_prefix=ent_pkl_path)
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
         rel_pkl_path = f'{self.file_path}_rel_{self.name}.pkl'
-        if os.path.isfile(rel_pkl_path):
-            relations = pickle.load(open(rel_pkl_path, 'rb'))
-        else:
-            relations = self.model.encode(self.relations, num_layer=num_layer)
-            pickle.dump(relations, open(rel_pkl_path, 'wb'))
+        relations = self.model.encode(self.relations,
+                                      num_layer=num_layer,
+                                      file_prefix=rel_pkl_path)
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
@@ -99,7 +92,7 @@ class CaBE():
         entity_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
             n_clusters=None,
-            affinity="cosine",
+            affinity='cosine',
             linkage=self.linkage)
         assigned_clusters = entity_cluster.fit_predict(entities)
         return transform_clusters(assigned_clusters)
@@ -108,7 +101,7 @@ class CaBE():
         relation_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
             n_clusters=None,
-            affinity="cosine",
+            affinity='cosine',
             linkage=self.linkage)
         assigned_clusters = relation_cluster.fit_predict(relations)
         return transform_clusters(assigned_clusters)

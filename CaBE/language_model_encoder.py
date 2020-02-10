@@ -1,3 +1,4 @@
+import pickle
 import os
 from collections import defaultdict
 
@@ -6,6 +7,7 @@ import torch
 from transformers import BertTokenizer, BertModel
 from allennlp.commands.elmo import ElmoEmbedder
 
+DEFAULT_FILE_PREFIX = './data/language_model'
 SAVED_MODEL_PATH = '/tmp/MODEL'
 PRETRAINED_BERT_NAME = 'bert-large-uncased'
 PRETRAINED_ELMO_OPTION_URL = "https://s3-us-west-2.amazonaws.com/"\
@@ -32,7 +34,7 @@ class BertEncoder:
             self.model.save_pretrained(path)
             self.tokenizer.save_pretrained(path)
 
-    def encode(self, phrases, num_layer=12):
+    def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         encoded_phrases = []
 
         for phrase in phrases:
@@ -43,15 +45,21 @@ class BertEncoder:
                 dtype=torch.long)
 
             with torch.no_grad():
-                _, _, hidden_states = self.model(token_ids.unsqueeze(0))
-                # TODO: 隠れ層をそもそもdumpするようにしてしまう？
-                encoded_phrase = hidden_states[num_layer].squeeze()
+                emb_pkl_path = f'{file_prefix}_emb.pkl'
+                if os.path.isfile(emb_pkl_path):
+                    hidden_states = pickle.load(open(emb_pkl_path, 'rb'))
+                else:
+                    _, _, hidden_states = self.model(token_ids.unsqueeze(0))
+                    pickle.dump(hidden_states, open(emb_pkl_path, 'wb'))
+
+                encoded_tokens = hidden_states[num_layer].squeeze()
+                encoded_phrase = torch.mean(encoded_tokens, axis=0)
                 encoded_phrases.append(encoded_phrase)
         return torch.stack(encoded_phrases, axis=0)
 
     @classmethod
     def default_max_layer(cls):
-        return 12
+        return 24
 
 
 class ElmoEncoder:
@@ -59,8 +67,15 @@ class ElmoEncoder:
         self.model = ElmoEmbedder(PRETRAINED_ELMO_OPTION_URL,
                                   PRETRAINED_ELMO_WEIGHT_URL)
 
-    def encode(self, phrases, num_layer=2):
-        encoded_phrases = self.model.embed_sentence(phrases)
+    def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+        emb_pkl_path = f'{file_prefix}_emb.pkl'
+        if os.path.isfile(emb_pkl_path):
+            encoded_phrases = pickle.load(open(emb_pkl_path, 'rb'))
+        else:
+            encoded_phrases = self.model.embed_sentence(phrases)
+
+            pickle.dump(encoded_phrases, open(emb_pkl_path, 'wb'))
+
         return encoded_phrases[num_layer]
 
     @classmethod
