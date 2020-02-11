@@ -79,7 +79,7 @@ class CaBE:
         output_ent2cluster = {}
         for triple in self.triples:
 
-            sbj, obj = triple['triple'][0], triple['triple'][2]
+            sbj, obj = triple['triple_norm'][0], triple['triple_norm'][2]
             triple_id = triple['_id']
             sbj_u, obj_u = f'{sbj}|{triple_id}', f'{obj}|{triple_id}'
 

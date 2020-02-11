@@ -22,9 +22,9 @@ def extract_phrases(raw_triples):
     gold_ent2cluster = {}
     for raw_triple in raw_triples:
         triple_id = raw_triple['_id']
-        subject_phrase = raw_triple['triple'][0]
-        relation_phrase = raw_triple['triple'][1]
-        object_phrase = raw_triple['triple'][2]
+        subject_phrase = raw_triple['triple_norm'][0]
+        relation_phrase = raw_triple['triple_norm'][1]
+        object_phrase = raw_triple['triple_norm'][2]
 
         gold_link_sub = raw_triple['true_link']['subject']
         gold_link_obj = raw_triple['true_link']['object']

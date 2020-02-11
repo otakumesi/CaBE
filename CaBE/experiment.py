@@ -27,8 +27,8 @@ def experiment_config():
 
     # Config for grid_search
     min_threshold = 0.00000
-    max_threshold = 0.01000
-    threshold_step = 0.001000
+    max_threshold = 0.00001
+    threshold_step = 0.000001
     min_layer = 0
     max_layer = None
     linkages = ['average', 'single', 'complete']
