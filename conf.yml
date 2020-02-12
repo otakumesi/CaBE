@@ -1,7 +1,7 @@
 task: predict
   
 ex:
-  filename: './data/reverb45k_test'
+  file_name: 'reverb45k_test'
   lm_name: BERT
 
 model:

@@ -9,7 +9,7 @@ from CaBE.evaluator import Evaluator
 from CaBE.language_model_encoder import BertEncoder, ElmoEncoder
 
 
-DEFAULT_LOG_PATH = './log'
+LOG_PATH = './log'
 LMS = {'BERT': BertEncoder, 'Elmo': ElmoEncoder}
 
 
@@ -21,10 +21,9 @@ def predict(cfg):
     lang_model = LMS[lm_name]()
     num_layer = cfg.model.num_layer or lang_model.default_max_layer()
 
-    file_name = hydra.utils.to_absolute_path(cfg.ex.filename)
     model = build_model(name=f'{lm_name}_{num_layer}',
                         lang_model=lang_model,
-                        file_name=file_name,
+                        file_name=cfg.ex.file_name,
                         threshold=threshold,
                         linkage=linkage)
 
@@ -48,13 +47,12 @@ def grid_search(cfg):
     layers = range(cfg.grid_search.min_layer, max_layer+1)
 
     clusteringcfgs = product(thresholds, cfg.grid_search.linkages, layers)
-    file_name = hydra.utils.to_absolute_path(cfg.ex.filename)
 
     results = {}
     for thd, link, layer in clusteringcfgs:
         model = build_model(name=f'{lm_name}_{layer}',
                             lang_model=lang_model,
-                            file_name=file_name,
+                            file_name=cfg.ex.file_name,
                             threshold=thd,
                             linkage=link)
 
@@ -119,7 +117,7 @@ def experiment(model, params):
         print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
         log_metric('Pairwise F1', evl.pairwise_f1_score)
 
-        log_artifact(hydra.utils.to_absolute_path(DEFAULT_LOG_PATH))
+        log_artifact(hydra.utils.to_absolute_path(LOG_PATH))
 
         print("--- End: evaluate noun phrases ---")
     return evl.macro_f1_score, evl.micro_f1_score, evl.pairwise_f1_score

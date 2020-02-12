@@ -3,10 +3,13 @@ import os
 
 import numpy as np
 import torch
+import hydra
 from transformers import BertTokenizer, BertModel
 from allennlp.commands.elmo import ElmoEmbedder
 
-DEFAULT_FILE_PREFIX = './data/language_model'
+ELEM_FILE_PATH = './pkls/elems'
+DEFAULT_FILE_PREFIX = 'elem'
+
 SAVED_MODEL_PATH = '/tmp/MODEL'
 PRETRAINED_BERT_NAME = 'bert-large-uncased'
 PRETRAINED_ELMO_OPTION_URL = "https://s3-us-west-2.amazonaws.com/"\
@@ -19,7 +22,9 @@ PRETRAINED_ELMO_WEIGHT_URL = "https://s3-us-west-2.amazonaws.com/"\
 
 class BertEncoder:
     def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
-        path = f'{SAVED_MODEL_PATH}-{pretrained_name}'
+        self.pretrained_name = pretrained_name
+
+        path = f'{SAVED_MODEL_PATH}_{pretrained_name}'
         if os.path.exists(path) and os.listdir(path):
             self.model = BertModel.from_pretrained(path,
                                                    output_hidden_states=True)
@@ -34,7 +39,9 @@ class BertEncoder:
             self.tokenizer.save_pretrained(path)
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
-        emb_pkl_path = f'{file_prefix}_emb.pkl'
+        emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
+        emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
+
         if os.path.isfile(emb_pkl_path):
             return pickle.load(open(emb_pkl_path, 'rb'))[:, num_layer, :]
 
@@ -65,7 +72,8 @@ class ElmoEncoder:
                                   PRETRAINED_ELMO_WEIGHT_URL)
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
-        emb_pkl_path = f'{file_prefix}_emb.pkl'
+        emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
+        emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
         if os.path.isfile(emb_pkl_path):
             encoded_phrases = pickle.load(open(emb_pkl_path, 'rb'))
         else:

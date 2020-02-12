@@ -7,6 +7,9 @@ from sklearn.cluster import AgglomerativeClustering
 
 from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
 
+DATA_PATH = './data'
+CLUSTER_PATH = './pkls/clusters'
+
 
 class CaBE:
     def __init__(self, name, model, file_name, distance_threshold, linkage):
@@ -14,14 +17,13 @@ class CaBE:
         self.model = model
         self.distance_threshold = distance_threshold
         self.linkage = linkage
-        self.__init_triples(file_name)
+        self.file_name = file_name
+        file_path = hydra.utils.to_absolute_path(f'{DATA_PATH}/{file_name}')
+        self.__init_triples(file_path)
 
     def __init_triples(self, file_path):
         raw_triples = read_triples(file_path)
         raw_ents, raw_rels, gold_ent2cluster = extract_phrases(raw_triples)
-
-        self.file_path = file_path
-
         self.triples = raw_triples
 
         self.ent2freq = Counter(raw_ents)
@@ -46,17 +48,17 @@ class CaBE:
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode entities ---")
-        ent_pkl_path = f'{self.file_path}_ent_{self.name}'
+        ent_prefix = f'{self.file_name}_ent'
         entities = self.model.encode(self.entities,
                                      num_layer=num_layer,
-                                     file_prefix=ent_pkl_path)
+                                     file_prefix=ent_prefix)
         print("--- End: encode entities ---")
 
         print("--- Start: encode relations ---")
-        rel_pkl_path = f'{self.file_path}_rel_{self.name}.pkl'
+        rel_prefix = f'{self.file_name}_rel'
         relations = self.model.encode(self.relations,
                                       num_layer=num_layer,
-                                      file_prefix=rel_pkl_path)
+                                      file_prefix=rel_prefix)
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
@@ -118,5 +120,8 @@ class CaBE:
         return self.__gold_ent2cluster
 
     def dump_clusters(self, clusters, prefix):
-        file_path = hydra.utils.to_absolute_path(f'./data/{prefix}-{self.name}-{self.linkage}-threshold_{self.distance_threshold}.pkl')
+        threshold = f'{self.distance_threshold:.5f}'
+        names = [prefix, self.name, self.linkage, threshold]
+        file_name = f'{CLUSTER_PATH}/{"_".join(names)}.pkl'
+        file_path = hydra.utils.to_absolute_path(file_name)
         pickle.dump(clusters, open(file_path, 'wb'))
