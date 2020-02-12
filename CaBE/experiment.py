@@ -80,15 +80,21 @@ def build_model(name, lang_model, file_name, threshold, linkage):
 
 def experiment(model, params):
     ent_outputs, rel_outputs = model.run(params['num_layer'])
+    lm_name, num_layer = params["lm_name"], params["num_layer"]
+    threshold, linkage = params['threshold'], params['linkage']
 
     with mlflow.start_run():
-        log_param('Language Model', params['lm_name'])
-        log_param('Model Layer', params['num_layer'])
-        log_param('Clustering Threshold', params['threshold'])
-        log_param('Linkage', params['linkage'])
+        log_param('Language Model', lm_name)
+        log_param('Model Layer', num_layer)
+        log_param('Clustering Threshold', threshold)
+        log_param('Linkage', linkage)
 
         print("--- Start: evlaluate noun phrases ---")
         evl = Evaluator(ent_outputs, model.gold_ent2cluster)
+
+        param_log = f'Language Model: {lm_name}, Layer: {num_layer}, '\
+            f'Threshold: {threshold}, Linkage: {linkage}'
+        print(param_log)
 
         print('Macro Precision: {}'.format(evl.macro_precision))
         log_metric('Macro Precision', evl.macro_precision)
@@ -112,7 +118,7 @@ def experiment(model, params):
         log_metric('Pairwise Precision', evl.pairwise_precision)
 
         print('Pairwise Recall: {}'.format(evl.pairwise_recall))
-        log_metric('Pairwise Recall', evl.pairwise_recall)
+
 
         print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
         log_metric('Pairwise F1', evl.pairwise_f1_score)
