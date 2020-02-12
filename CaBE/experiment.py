@@ -1,87 +1,70 @@
 from itertools import product
 import numpy as np
-from sacred import Experiment
-from sacred.observers import FileStorageObserver
+import hydra
+import mlflow
+from mlflow import log_param, log_metric, log_artifact
+
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
 from CaBE.language_model_encoder import BertEncoder, ElmoEncoder
 
 
-DEFAULT_REVERB_PATH = './data/reverb45k_test'
 DEFAULT_LOG_PATH = './log'
-ex = Experiment('CaBE Experiment')
-ex.observers.append(FileStorageObserver(DEFAULT_LOG_PATH))
-
 LMS = {'BERT': BertEncoder, 'Elmo': ElmoEncoder}
 
 
-@ex.config
-def experiment_config():
-    file_name = DEFAULT_REVERB_PATH
-    lm_name = 'BERT'
-
-    # Config for main
-    num_layer = None
-    threshold = .0000
-    linkage = 'average'
-
-    # Config for grid_search
-    min_threshold = 0.00000
-    max_threshold = 0.00001
-    threshold_step = 0.000001
-    min_layer = 0
-    max_layer = None
-    linkages = ['average', 'single', 'complete']
-
-
-@ex.automain
-def main(_run, _config):
-    lm_name = _config['lm_name']
-    linkage = _config["linkage"]
-    threshold = _config["threshold"]
+def predict(cfg):
+    lm_name = cfg.ex.lm_name
+    linkage = cfg.model.linkage
+    threshold = cfg.model.threshold
 
     lang_model = LMS[lm_name]()
-    num_layer = _config["num_layer"] or lang_model.default_max_layer()
+    num_layer = cfg.model.num_layer or lang_model.default_max_layer()
 
-    name = f'{lm_name}_{num_layer}'
-    model = build_model(name=name,
+    file_name = hydra.utils.to_absolute_path(cfg.ex.filename)
+    model = build_model(name=f'{lm_name}_{num_layer}',
                         lang_model=lang_model,
-                        file_name=_config['file_name'],
+                        file_name=file_name,
                         threshold=threshold,
                         linkage=linkage)
-    log_name = f'{lm_name}_{num_layer}_{linkage}_{threshold}'
 
-    experiment(_run, model, log_name, num_layer)
+    params = {"lm_name": lm_name,
+              "num_layer": num_layer,
+              "threshold": threshold,
+              "linkage": linkage}
+
+    experiment(model, params)
 
 
-@ex.command
-def grid_search(_run, _config):
-    thresholds = np.arange(_config['min_threshold'],
-                           _config['max_threshold'],
-                           _config['threshold_step'])
+def grid_search(cfg):
+    thresholds = np.arange(cfg.grid_search.min_threshold,
+                           cfg.grid_search.max_threshold,
+                           cfg.grid_search.threshold_step)
 
-    lm_name = _config["lm_name"]
+    lm_name = cfg.ex.lm_name
     lang_model = LMS[lm_name]()
 
-    max_layer = _config['max_layer'] or lang_model.default_max_layer()
-    layers = range(_config['min_layer'], max_layer+1)
+    max_layer = cfg.grid_search.max_layer or lang_model.default_max_layer()
+    layers = range(cfg.grid_search.min_layer, max_layer+1)
 
-    clustering_configs = product(thresholds, _config['linkages'], layers)
+    clusteringcfgs = product(thresholds, cfg.grid_search.linkages, layers)
+    file_name = hydra.utils.to_absolute_path(cfg.ex.filename)
 
     results = {}
-    for thd, link, layer in clustering_configs:
-        name = f'{lm_name}_{layer}'
-        model = build_model(name=name,
+    for thd, link, layer in clusteringcfgs:
+        model = build_model(name=f'{lm_name}_{layer}',
                             lang_model=lang_model,
-                            file_name=_config['file_name'],
+                            file_name=file_name,
                             threshold=thd,
                             linkage=link)
 
-        log_name = f'{lm_name}_{layer}_{link}_{thd:.5f}'
-        macro_f1, micro_f1, pairwise_f1 = experiment(_run,
-                                                     model,
-                                                     log_name,
-                                                     layer)
+        params = {"lm_name": lm_name,
+                  "num_layer": layer,
+                  "threshold": thd,
+                  "linkage": link}
+
+        macro_f1, micro_f1, pairwise_f1 = experiment(model, params)
+        log_name = '_'.join([f'{k}_{v}' for k, v in params.items()])
         results[log_name] = (macro_f1, micro_f1, pairwise_f1)
 
     sorted_confs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
@@ -97,39 +80,46 @@ def build_model(name, lang_model, file_name, threshold, linkage):
                 linkage=linkage)
 
 
-def experiment(_run, model, log_name, num_layer):
-    ent_outputs, rel_outputs = model.run(num_layer)
+def experiment(model, params):
+    ent_outputs, rel_outputs = model.run(params['num_layer'])
 
-    print("--- Start: evlaluate noun phrases ---")
-    evl = Evaluator(ent_outputs, model.gold_ent2cluster)
+    with mlflow.start_run():
+        log_param('Language Model', params['lm_name'])
+        log_param('Model Layer', params['num_layer'])
+        log_param('Clustering Threshold', params['threshold'])
+        log_param('Linkage', params['linkage'])
 
-    print('Macro Precision: {}'.format(evl.macro_precision))
-    _run.log_scalar('Macro Precision', evl.macro_precision, log_name)
+        print("--- Start: evlaluate noun phrases ---")
+        evl = Evaluator(ent_outputs, model.gold_ent2cluster)
 
-    print('Macro Recall: {}'.format(evl.macro_recall))
-    _run.log_scalar('Macro Recall', evl.macro_recall, log_name)
+        print('Macro Precision: {}'.format(evl.macro_precision))
+        log_metric('Macro Precision', evl.macro_precision)
 
-    print('Macro F1: {}'.format(evl.macro_f1_score))
-    _run.log_scalar('Macro F1', evl.macro_f1_score, log_name)
+        print('Macro Recall: {}'.format(evl.macro_recall))
+        log_metric('Macro Recall', evl.macro_recall)
 
-    print('Micro Precision: {}'.format(evl.micro_precision))
-    _run.log_scalar('Micro Precision', evl.micro_precision, log_name)
+        print('Macro F1: {}'.format(evl.macro_f1_score))
+        log_metric('Macro F1', evl.macro_f1_score)
 
-    print('Micro Recall: {}'.format(evl.micro_recall))
-    _run.log_scalar('Micro Recall', evl.micro_recall, log_name)
+        print('Micro Precision: {}'.format(evl.micro_precision))
+        log_metric('Micro Precision', evl.micro_precision)
 
-    print('Micro F1: {}'.format(evl.micro_f1_score))
-    _run.log_scalar('Micro F1', evl.micro_f1_score, log_name)
+        print('Micro Recall: {}'.format(evl.micro_recall))
+        log_metric('Micro Recall', evl.micro_recall)
 
-    print('Pairwise Precision: {}'.format(evl.pairwise_precision))
-    _run.log_scalar('Pairwise Precision', evl.pairwise_precision, log_name)
+        print('Micro F1: {}'.format(evl.micro_f1_score))
+        log_metric('Micro F1', evl.micro_f1_score)
 
-    print('Pairwise Recall: {}'.format(evl.pairwise_recall))
-    _run.log_scalar('Pairwise Recall', evl.pairwise_recall, log_name)
+        print('Pairwise Precision: {}'.format(evl.pairwise_precision))
+        log_metric('Pairwise Precision', evl.pairwise_precision)
 
-    print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
-    _run.log_scalar('Pairwise F1', evl.pairwise_f1_score, log_name)
+        print('Pairwise Recall: {}'.format(evl.pairwise_recall))
+        log_metric('Pairwise Recall', evl.pairwise_recall)
 
-    print("--- End: evaluate noun phrases ---")
+        print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
+        log_metric('Pairwise F1', evl.pairwise_f1_score)
 
+        log_artifact(hydra.utils.to_absolute_path(DEFAULT_LOG_PATH))
+
+        print("--- End: evaluate noun phrases ---")
     return evl.macro_f1_score, evl.micro_f1_score, evl.pairwise_f1_score

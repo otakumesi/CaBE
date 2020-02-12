@@ -179,7 +179,7 @@ flycheck_*.el
 /network-security.data
 
 # for experiment
-/log
+/log/*
 /data/*
 !.gitkeep
-/record
+/outputs

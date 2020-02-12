@@ -1,5 +1,6 @@
 import pickle
 from collections import Counter
+import hydra
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
@@ -111,5 +112,5 @@ class CaBE:
         return self.__gold_ent2cluster
 
     def dump_clusters(self, clusters, prefix):
-        file_path = f'./data/{prefix}-{self.name}-{self.linkage}-threshold_{self.distance_threshold}.pkl'
+        file_path = hydra.utils.to_absolute_path(f'./data/{prefix}-{self.name}-{self.linkage}-threshold_{self.distance_threshold}.pkl')
         pickle.dump(clusters, open(file_path, 'wb'))

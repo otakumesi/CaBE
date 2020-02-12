@@ -1,0 +1,22 @@
+task: predict
+  
+ex:
+  filename: './data/reverb45k_test'
+  lm_name: BERT
+
+model:
+  num_layer: 
+  threshold: .0000
+  linkage: average
+
+grid_search:
+  min_threshold:
+  min_threshold: 0.00000
+  max_threshold: 0.00001
+  threshold_step: 0.000001
+  min_layer: 0
+  max_layer:
+  linkages:
+    - average
+    - single
+    - complete
