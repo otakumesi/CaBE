@@ -1,5 +1,5 @@
 import pickle
-from collections import Counter
+from collections import Counter, defaultdict
 import hydra
 
 from sklearn.metrics.pairwise import cosine_similarity
@@ -27,13 +27,19 @@ class CaBE:
         self.ent2freq = Counter(raw_ents)
         self.rel2freq = Counter(raw_rels)
 
-        self.entities = list(set(raw_ents))
-        self.relations = list(set(raw_rels))
+        self.entities = list(raw_ents)
+        self.relations = list(raw_rels)
 
-        self.ent2id = {v: k for k, v in enumerate(self.entities)}
-        self.id2ent = {v: k for k, v in self.ent2id.items()}
-        self.rel2id = {v: k for k, v in enumerate(self.relations)}
-        self.id2rel = {v: k for k, v in self.rel2id.items()}
+        self.id2ent = {k: v for k, v in enumerate(self.entities)}
+        self.ent2id = defaultdict(set)
+        for k, v in self.id2ent.items():
+            self.ent2id[v].add(k)
+        self.id2rel = {k: v for k, v in enumerate(self.relations)}
+
+        self.rel2id = defaultdict(set)
+        for k, v in self.id2rel.items():
+            self.rel2id[v].add(k)
+
         self.__gold_ent2cluster = gold_ent2cluster
 
     def run(self, num_layer=12):

@@ -34,27 +34,25 @@ class BertEncoder:
             self.tokenizer.save_pretrained(path)
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
-        encoded_phrases = []
+        emb_pkl_path = f'{file_prefix}_emb.pkl'
+        if os.path.isfile(emb_pkl_path):
+            return pickle.load(open(emb_pkl_path, 'rb'))[:, num_layer, :]
 
+        token_ids_list = []
         for phrase in phrases:
-            token_ids = torch.tensor(
-                self.tokenizer.encode(phrase,
-                                      max_length=7,
-                                      pad_to_max_length=True),
-                dtype=torch.long)
+            token_ids = self.tokenizer.encode(phrase,
+                                              max_length=7,
+                                              pad_to_max_length=True)
+            token_ids_list.append(torch.tensor(token_ids, dtype=torch.long))
+        token_ids_list = torch.stack(token_ids_list, axis=0)
 
-            with torch.no_grad():
-                emb_pkl_path = f'{file_prefix}_emb.pkl'
-                if os.path.isfile(emb_pkl_path):
-                    hidden_states = pickle.load(open(emb_pkl_path, 'rb'))
-                else:
-                    _, _, hidden_states = self.model(token_ids.unsqueeze(0))
-                    pickle.dump(hidden_states, open(emb_pkl_path, 'wb'))
+        with torch.no_grad():
+            _, _, hid_states = self.model(token_ids_list)
+            hid_states = torch.stack(hid_states, axis=0).transpose(0, 1)
+            enc_phrases_of_layers = torch.mean(hid_states, axis=2)
 
-                encoded_tokens = hidden_states[num_layer].squeeze()
-                encoded_phrase = torch.mean(encoded_tokens, axis=0)
-                encoded_phrases.append(encoded_phrase)
-        return torch.stack(encoded_phrases, axis=0)
+        pickle.dump(enc_phrases_of_layers, open(emb_pkl_path, 'wb'))
+        return enc_phrases_of_layers[:, num_layer, :]
 
     @classmethod
     def default_max_layer(cls):
@@ -72,7 +70,6 @@ class ElmoEncoder:
             encoded_phrases = pickle.load(open(emb_pkl_path, 'rb'))
         else:
             encoded_phrases = self.model.embed_sentence(phrases)
-
             pickle.dump(encoded_phrases, open(emb_pkl_path, 'wb'))
 
         return encoded_phrases[num_layer]
