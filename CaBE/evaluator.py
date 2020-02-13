@@ -93,6 +93,9 @@ def _pairwise_metrics(output_cluster2ele, gold_cluster2ele, gold_ele2cluster):
         pairs = list(combinations(cluster, 2))
         num_output_pairs += len(pairs)
 
+        if len(pairs) <= 1:
+            continue
+
         for e_1, e_2 in pairs:
             if gold_ele2cluster[e_1] != gold_ele2cluster[e_2]:
                 continue

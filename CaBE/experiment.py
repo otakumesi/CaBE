@@ -3,6 +3,7 @@ import numpy as np
 import hydra
 import mlflow
 from mlflow import log_param, log_metric, log_artifact
+from multiprocessing import Pool
 
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
@@ -46,28 +47,36 @@ def grid_search(cfg):
     max_layer = cfg.grid_search.max_layer or lang_model.default_max_layer
     layers = range(cfg.grid_search.min_layer, max_layer+1)
 
-    clusteringcfgs = product(thresholds, cfg.grid_search.linkages, layers)
+    configs_for_clustering = product([lm_name],
+                                     [cfg.ex.file_name],
+                                     [lang_model],
+                                     thresholds,
+                                     cfg.grid_search.linkages,
+                                     layers)
 
-    results = {}
-    for thd, link, layer in clusteringcfgs:
-        model = build_model(name=f'{lm_name}_{layer}',
-                            lang_model=lang_model,
-                            file_name=cfg.ex.file_name,
-                            threshold=thd,
-                            linkage=link)
+    with Pool(processes=cfg.grid_search.num_process) as p:
+        results = p.starmap(_grid_search, configs_for_clustering)
 
-        params = {"lm_name": lm_name,
-                  "num_layer": layer,
-                  "threshold": thd,
-                  "linkage": link}
-
-        macro_f1, micro_f1, pairwise_f1 = experiment(model, params)
-        log_name = '_'.join([f'{k}_{v}' for k, v in params.items()])
-        results[log_name] = (macro_f1, micro_f1, pairwise_f1)
-
-    sorted_confs = sorted(results.items(), key=lambda kv: np.mean(kv[1]))
+    sorted_confs = sorted(results, key=lambda kv: np.mean(kv[1]))
     for name, f1s in sorted_confs:
         print(f'{name}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
+
+def _grid_search(lm_name, file_name, lm, thd, link, layer):
+    model = build_model(name=f'{lm_name}_{layer}',
+                        lang_model=lm,
+                        file_name=file_name,
+                        threshold=thd,
+                        linkage=link)
+
+    params = {"lm_name": lm_name,
+              "num_layer": layer,
+              "threshold": thd,
+              "linkage": link}
+
+    macro_f1, micro_f1, pairwise_f1 = experiment(model, params)
+    log_name = '_'.join([f'{k}_{v}' for k, v in params.items()])
+
+    return log_name, (macro_f1, micro_f1, pairwise_f1)
 
 
 def build_model(name, lang_model, file_name, threshold, linkage):

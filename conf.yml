@@ -6,13 +6,14 @@ ex:
 
 model:
   num_layer: 
-  threshold: .00001
+  threshold: .01
   linkage: average
 
 grid_search:
-  min_threshold:  0.00000
-  max_threshold:  0.00001
-  threshold_step: 0.000001
+  num_process: 70
+  min_threshold:  0.01
+  max_threshold:  0.3
+  threshold_step: 0.01
   min_layer: 0
   max_layer:
   linkages:

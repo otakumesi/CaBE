@@ -120,7 +120,7 @@ class CaBE:
         return self.__gold_ent2cluster
 
     def dump_clusters(self, clusters, prefix):
-        threshold = f'{self.distance_threshold:.5f}'
+        threshold = f'{self.distance_threshold:.6f}'
         names = [prefix, self.name, self.linkage, threshold]
         file_name = f'{CLUSTER_PATH}/{"_".join(names)}.pkl'
         file_path = hydra.utils.to_absolute_path(file_name)
