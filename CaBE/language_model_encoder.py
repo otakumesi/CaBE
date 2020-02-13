@@ -21,6 +21,8 @@ PRETRAINED_ELMO_WEIGHT_URL = "https://s3-us-west-2.amazonaws.com/"\
 
 
 class BertEncoder:
+    default_max_layer = 24
+
     def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
         self.pretrained_name = pretrained_name
 
@@ -61,12 +63,10 @@ class BertEncoder:
         pickle.dump(enc_phrases_of_layers, open(emb_pkl_path, 'wb'))
         return enc_phrases_of_layers[:, num_layer, :]
 
-    @classmethod
-    def default_max_layer(cls):
-        return 24
-
 
 class ElmoEncoder:
+    default_max_layer = 2
+
     def __init__(self):
         self.model = ElmoEmbedder(PRETRAINED_ELMO_OPTION_URL,
                                   PRETRAINED_ELMO_WEIGHT_URL)
@@ -81,7 +81,3 @@ class ElmoEncoder:
             pickle.dump(encoded_phrases, open(emb_pkl_path, 'wb'))
 
         return encoded_phrases[num_layer]
-
-    @classmethod
-    def default_max_layer(cls):
-        return 2

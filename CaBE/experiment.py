@@ -19,7 +19,7 @@ def predict(cfg):
     threshold = cfg.model.threshold
 
     lang_model = LMS[lm_name]()
-    num_layer = cfg.model.num_layer or lang_model.default_max_layer()
+    num_layer = cfg.model.num_layer or lang_model.default_max_layer
 
     model = build_model(name=f'{lm_name}_{num_layer}',
                         lang_model=lang_model,
@@ -43,7 +43,7 @@ def grid_search(cfg):
     lm_name = cfg.ex.lm_name
     lang_model = LMS[lm_name]()
 
-    max_layer = cfg.grid_search.max_layer or lang_model.default_max_layer()
+    max_layer = cfg.grid_search.max_layer or lang_model.default_max_layer
     layers = range(cfg.grid_search.min_layer, max_layer+1)
 
     clusteringcfgs = product(thresholds, cfg.grid_search.linkages, layers)
