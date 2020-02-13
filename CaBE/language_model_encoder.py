@@ -45,7 +45,8 @@ class BertEncoder:
         emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
 
         if os.path.isfile(emb_pkl_path):
-            return pickle.load(open(emb_pkl_path, 'rb'))[:, num_layer, :]
+            with open(emb_pkl_path, 'rb') as f:
+                return pickle.load(f)[:, num_layer, :]
 
         token_ids_list = []
         for phrase in phrases:
@@ -60,7 +61,8 @@ class BertEncoder:
             hid_states = torch.stack(hid_states, axis=0).transpose(0, 1)
             enc_phrases_of_layers = torch.mean(hid_states, axis=2)
 
-        pickle.dump(enc_phrases_of_layers, open(emb_pkl_path, 'wb'))
+            with open(emb_pkl_path, 'wb') as f:
+                pickle.dump(enc_phrases_of_layers, f)
         return enc_phrases_of_layers[:, num_layer, :]
 
 
@@ -75,9 +77,11 @@ class ElmoEncoder:
         emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
         emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
         if os.path.isfile(emb_pkl_path):
-            encoded_phrases = pickle.load(open(emb_pkl_path, 'rb'))
+            with open(emb_pkl_path, 'rb') as f:
+                encoded_phrases = pickle.load(f)
         else:
             encoded_phrases = self.model.embed_sentence(phrases)
-            pickle.dump(encoded_phrases, open(emb_pkl_path, 'wb'))
+            with open(emb_pkl_path, 'wb') as f:
+                pickle.dump(encoded_phrases, f)
 
         return encoded_phrases[num_layer]
