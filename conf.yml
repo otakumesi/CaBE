@@ -10,7 +10,7 @@ model:
   linkage: average
 
 grid_search:
-  num_process: 70
+  num_process: 8
   min_threshold:  0.01
   max_threshold:  0.3
   threshold_step: 0.01
