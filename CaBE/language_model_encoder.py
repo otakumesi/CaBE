@@ -62,7 +62,8 @@ class BertEncoder:
             enc_phrases_of_layers = torch.mean(hid_states, axis=2)
 
             with open(emb_pkl_path, 'wb') as f:
-                pickle.dump(enc_phrases_of_layers, f)
+                pickle.dump(enc_phrases_of_layers, f,
+                            protocol=pickle.HIGHEST_PROTOCOL)
         return enc_phrases_of_layers[:, num_layer, :]
 
 
@@ -82,6 +83,7 @@ class ElmoEncoder:
         else:
             encoded_phrases = self.model.embed_sentence(phrases)
             with open(emb_pkl_path, 'wb') as f:
-                pickle.dump(encoded_phrases, f)
+                pickle.dump(encoded_phrases, f,
+                            protocol=pickle.HIGHEST_PROTOCOL)
 
         return encoded_phrases[num_layer]

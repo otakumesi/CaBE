@@ -125,4 +125,4 @@ class CaBE:
         file_name = f'{CLUSTER_PATH}/{"_".join(names)}.pkl'
         file_path = hydra.utils.to_absolute_path(file_name)
         with open(file_path, 'wb') as f:
-            pickle.dump(clusters, f)
+            pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)
