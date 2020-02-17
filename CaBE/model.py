@@ -4,6 +4,8 @@ import hydra
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import pairwise_distances
+from scipy.stats import wasserstein_distance
 
 from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
 
@@ -102,7 +104,7 @@ class CaBE:
         entity_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
             n_clusters=None,
-            affinity=self.similarity,
+            affinity=self.__affinity(),
             linkage=self.linkage)
         assigned_clusters = entity_cluster.fit_predict(entities)
         return transform_clusters(assigned_clusters)
@@ -111,10 +113,16 @@ class CaBE:
         relation_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
             n_clusters=None,
-            affinity=self.similarity,
+            affinity=self.__affinity(),
             linkage=self.linkage)
         assigned_clusters = relation_cluster.fit_predict(relations)
         return transform_clusters(assigned_clusters)
+
+    def __affinity(self):
+        if self.similarity != 'wasserstein':
+            return self.similarity
+
+        return _wasserstein
 
     @property
     def gold_ent2cluster(self):
@@ -127,3 +135,7 @@ class CaBE:
         file_path = hydra.utils.to_absolute_path(file_name)
         with open(file_path, 'wb') as f:
             pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def _wasserstein(X):
+    return pairwise_distances(X, metric=wasserstein_distance)

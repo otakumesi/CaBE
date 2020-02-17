@@ -2,13 +2,13 @@ task: predict
   
 ex:
   file_name: 'reverb45k_test'
-  lm_name: BERT
+  enc: BERT
+  similarity: cosine
 
 model:
   num_layer: 
   threshold: .01
   linkage: average
-  similarity: cosine
 
 grid_search:
   num_process: 8
@@ -17,7 +17,6 @@ grid_search:
   threshold_step: 0.01
   min_layer: 0
   max_layer:
-  similarity: cosine
   linkages:
     - average
     - single

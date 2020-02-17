@@ -7,30 +7,32 @@ from multiprocessing import Pool
 
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
-from CaBE.language_model_encoder import BertEncoder, ElmoEncoder
+import CaBE.language_model_encoder as lme
 
 
 LOG_PATH = './log'
-LMS = {'BERT': BertEncoder, 'Elmo': ElmoEncoder}
+LMS = {'BERT': lme.BertEncoder,
+       'BERT-attn': lme.BertAttentionEncoder,
+       'Elmo': lme.ElmoEncoder}
 
 
 def predict(cfg):
-    lm_name = cfg.ex.lm_name
+    enc_name = cfg.ex.enc
     linkage = cfg.model.linkage
     threshold = cfg.model.threshold
-    similarity = cfg.model.similarity
+    similarity = cfg.ex.similarity
 
-    lang_model = LMS[lm_name]()
-    num_layer = cfg.model.num_layer or lang_model.default_max_layer
+    enc_model = LMS[enc_name]()
+    num_layer = cfg.model.num_layer or enc_model.default_max_layer
 
-    model = build_model(name=f'{lm_name}_{num_layer}',
-                        lang_model=lang_model,
+    model = build_model(name=f'{enc_name}_{num_layer}',
+                        enc_model=enc_model,
                         file_name=cfg.ex.file_name,
                         threshold=threshold,
                         similarity=similarity,
                         linkage=linkage)
 
-    params = {"lm_name": lm_name,
+    params = {"enc_name": enc_name,
               "num_layer": num_layer,
               "threshold": threshold,
               "similarity": similarity,
@@ -44,17 +46,17 @@ def grid_search(cfg):
                            cfg.grid_search.max_threshold,
                            cfg.grid_search.threshold_step)
 
-    lm_name = cfg.ex.lm_name
-    lang_model = LMS[lm_name]()
+    enc_name = cfg.ex.enc
+    enc_model = LMS[enc_name]()
 
-    max_layer = cfg.grid_search.max_layer or lang_model.default_max_layer
+    max_layer = cfg.grid_search.max_layer or enc_model.default_max_layer
     layers = range(cfg.grid_search.min_layer, max_layer+1)
 
-    configs_for_clustering = product([lm_name],
+    configs_for_clustering = product([enc_name],
                                      [cfg.ex.file_name],
-                                     [lang_model],
+                                     [enc_model],
                                      thresholds,
-                                     [cfg.grid_search.similarity],
+                                     [cfg.ex.similarity],
                                      cfg.grid_search.linkages,
                                      layers)
 
@@ -66,15 +68,15 @@ def grid_search(cfg):
         print(f'{name}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
 
-def _grid_search(lm_name, file_name, lm, thd, sim, link, layer):
-    model = build_model(name=f'{lm_name}_{layer}',
-                        lang_model=lm,
+def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
+    model = build_model(name=f'{enc_name}_{layer}',
+                        enc_model=enc,
                         file_name=file_name,
                         threshold=thd,
                         similarity=sim,
                         linkage=link)
 
-    params = {"lm_name": lm_name,
+    params = {"enc_name": enc_name,
               "num_layer": layer,
               "threshold": thd,
               "similarity": sim,
@@ -86,9 +88,9 @@ def _grid_search(lm_name, file_name, lm, thd, sim, link, layer):
     return log_name, (macro_f1, micro_f1, pairwise_f1)
 
 
-def build_model(name, lang_model, file_name, threshold, similarity, linkage):
+def build_model(name, enc_model, file_name, threshold, similarity, linkage):
     return CaBE(name=name,
-                model=lang_model,
+                model=enc_model,
                 file_name=file_name,
                 distance_threshold=threshold,
                 similarity=similarity,
@@ -97,11 +99,11 @@ def build_model(name, lang_model, file_name, threshold, similarity, linkage):
 
 def experiment(model, params):
     ent_outputs, rel_outputs = model.run(params['num_layer'])
-    lm_name, num_layer = params["lm_name"], params["num_layer"]
+    enc_name, num_layer = params["enc_name"], params["num_layer"]
     threshold, linkage, similarity = params['threshold'], params['linkage'], params["similarity"]
 
     with mlflow.start_run():
-        log_param('Language Model', lm_name)
+        log_param('Language Model', enc_name)
         log_param('Model Layer', num_layer)
         log_param('Clustering Threshold', threshold)
         log_param('Similarity', similarity)
@@ -110,7 +112,7 @@ def experiment(model, params):
         print("--- Start: evlaluate noun phrases ---")
         evl = Evaluator(ent_outputs, model.gold_ent2cluster)
 
-        param_log = f'Language Model: {lm_name}, Layer: {num_layer}, '\
+        param_log = f'Language Model: {enc_name}, Layer: {num_layer}, '\
             f'Threshold: {threshold}, Similarity: {similarity}, Linkage: {linkage}'
         print(param_log)
 

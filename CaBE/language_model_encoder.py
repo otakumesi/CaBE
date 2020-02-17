@@ -67,6 +67,53 @@ class BertEncoder:
         return enc_phrases_of_layers[:, num_layer, :]
 
 
+class BertAttentionEncoder:
+    default_max_layer = 24
+
+    def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
+        self.pretrained_name = pretrained_name
+
+        path = f'{SAVED_MODEL_PATH}_{pretrained_name}'
+        if os.path.exists(path) and os.listdir(path):
+            self.model = BertModel.from_pretrained(path,
+                                                   output_hidden_states=True)
+            self.tokenizer = BertTokenizer.from_pretrained(path)
+        else:
+            self.model = BertModel.from_pretrained(pretrained_name,
+                                                   output_attentions=True)
+            self.tokenizer = BertTokenizer.from_pretrained(pretrained_name)
+
+            os.makedirs(path, exist_ok=True)
+            self.model.save_pretrained(path)
+            self.tokenizer.save_pretrained(path)
+
+    def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+        emb_pkl_path = f'{ELEM_FILE_PATH}/attn_{file_prefix}_{self.pretrained_name}.pkl'
+        emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
+
+        if os.path.isfile(emb_pkl_path):
+            with open(emb_pkl_path, 'rb') as f:
+                return pickle.load(f)[:, num_layer, :]
+
+        token_ids_list = []
+        for phrase in phrases:
+            token_ids = self.tokenizer.encode(phrase,
+                                              max_length=7,
+                                              pad_to_max_length=True)
+            token_ids_list.append(torch.tensor(token_ids, dtype=torch.long))
+        token_ids_list = torch.stack(token_ids_list, axis=0)
+
+        with torch.no_grad():
+            _, _, attentions = self.model(token_ids_list)
+            attentions = torch.stack(attentions, axis=0).transpose(0, 1)
+            mean_attns_of_layers = torch.mean(attentions, axis=2)
+
+            with open(emb_pkl_path, 'wb') as f:
+                pickle.dump(mean_attns_of_layers, f,
+                            protocol=pickle.HIGHEST_PROTOCOL)
+        return mean_attns_of_layers[:, num_layer, :]
+
+
 class ElmoEncoder:
     default_max_layer = 2
 
