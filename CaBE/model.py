@@ -122,7 +122,7 @@ class CaBE:
 
     def dump_clusters(self, clusters, prefix):
         threshold = f'{self.distance_threshold:.6f}'
-        names = [prefix, self.name, self.linkage, threshold]
+        names = [prefix, self.name, self.linkage, self.similarity, threshold]
         file_name = f'{CLUSTER_PATH}/{"_".join(names)}.pkl'
         file_path = hydra.utils.to_absolute_path(file_name)
         with open(file_path, 'wb') as f:
