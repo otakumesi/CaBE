@@ -18,6 +18,7 @@ def predict(cfg):
     lm_name = cfg.ex.lm_name
     linkage = cfg.model.linkage
     threshold = cfg.model.threshold
+    similarity = cfg.model.similarity
 
     lang_model = LMS[lm_name]()
     num_layer = cfg.model.num_layer or lang_model.default_max_layer
@@ -26,11 +27,13 @@ def predict(cfg):
                         lang_model=lang_model,
                         file_name=cfg.ex.file_name,
                         threshold=threshold,
+                        similarity=similarity,
                         linkage=linkage)
 
     params = {"lm_name": lm_name,
               "num_layer": num_layer,
               "threshold": threshold,
+              "similarity": similarity,
               "linkage": linkage}
 
     experiment(model, params)
@@ -51,6 +54,7 @@ def grid_search(cfg):
                                      [cfg.ex.file_name],
                                      [lang_model],
                                      thresholds,
+                                     [cfg.grid_search.similarity],
                                      cfg.grid_search.linkages,
                                      layers)
 
@@ -61,16 +65,19 @@ def grid_search(cfg):
     for name, f1s in sorted_confs:
         print(f'{name}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
-def _grid_search(lm_name, file_name, lm, thd, link, layer):
+
+def _grid_search(lm_name, file_name, lm, thd, sim, link, layer):
     model = build_model(name=f'{lm_name}_{layer}',
                         lang_model=lm,
                         file_name=file_name,
                         threshold=thd,
+                        similarity=sim,
                         linkage=link)
 
     params = {"lm_name": lm_name,
               "num_layer": layer,
               "threshold": thd,
+              "similarity": sim,
               "linkage": link}
 
     macro_f1, micro_f1, pairwise_f1 = experiment(model, params)
@@ -79,30 +86,32 @@ def _grid_search(lm_name, file_name, lm, thd, link, layer):
     return log_name, (macro_f1, micro_f1, pairwise_f1)
 
 
-def build_model(name, lang_model, file_name, threshold, linkage):
+def build_model(name, lang_model, file_name, threshold, similarity, linkage):
     return CaBE(name=name,
                 model=lang_model,
                 file_name=file_name,
                 distance_threshold=threshold,
+                similarity=similarity,
                 linkage=linkage)
 
 
 def experiment(model, params):
     ent_outputs, rel_outputs = model.run(params['num_layer'])
     lm_name, num_layer = params["lm_name"], params["num_layer"]
-    threshold, linkage = params['threshold'], params['linkage']
+    threshold, linkage, similarity = params['threshold'], params['linkage'], params["similarity"]
 
     with mlflow.start_run():
         log_param('Language Model', lm_name)
         log_param('Model Layer', num_layer)
         log_param('Clustering Threshold', threshold)
+        log_param('Similarity', similarity)
         log_param('Linkage', linkage)
 
         print("--- Start: evlaluate noun phrases ---")
         evl = Evaluator(ent_outputs, model.gold_ent2cluster)
 
         param_log = f'Language Model: {lm_name}, Layer: {num_layer}, '\
-            f'Threshold: {threshold}, Linkage: {linkage}'
+            f'Threshold: {threshold}, Similarity: {similarity}, Linkage: {linkage}'
         print(param_log)
 
         print('Macro Precision: {}'.format(evl.macro_precision))

@@ -12,11 +12,12 @@ CLUSTER_PATH = './pkls/clusters'
 
 
 class CaBE:
-    def __init__(self, name, model, file_name, distance_threshold, linkage):
+    def __init__(self, name, model, file_name, distance_threshold, similarity, linkage):
         self.name = name
         self.model = model
         self.distance_threshold = distance_threshold
         self.linkage = linkage
+        self.similarity = similarity
         self.file_name = file_name
         file_path = hydra.utils.to_absolute_path(f'{DATA_PATH}/{file_name}')
         self.__init_triples(file_path)
@@ -101,7 +102,7 @@ class CaBE:
         entity_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
             n_clusters=None,
-            affinity='cosine',
+            affinity=self.similarity,
             linkage=self.linkage)
         assigned_clusters = entity_cluster.fit_predict(entities)
         return transform_clusters(assigned_clusters)
@@ -110,7 +111,7 @@ class CaBE:
         relation_cluster = AgglomerativeClustering(
             distance_threshold=self.distance_threshold,
             n_clusters=None,
-            affinity='cosine',
+            affinity=self.similarity,
             linkage=self.linkage)
         assigned_clusters = relation_cluster.fit_predict(relations)
         return transform_clusters(assigned_clusters)
