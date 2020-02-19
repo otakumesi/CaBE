@@ -26,7 +26,13 @@ class CaBE:
 
     def __init_triples(self, file_path):
         raw_triples = read_triples(file_path)
-        raw_ents, raw_rels, gold_ent2cluster = extract_phrases(raw_triples)
+        (raw_ents,
+         raw_rels,
+         gold_ent2cluster,
+         gold_rel2cluster) = extract_phrases(raw_triples)
+
+        self.__gold_ent2cluster = gold_ent2cluster
+        self.__gold_rel2cluster = gold_rel2cluster
         self.triples = raw_triples
 
         self.ent2freq = Counter(raw_ents)
@@ -44,8 +50,6 @@ class CaBE:
         self.rel2id = defaultdict(set)
         for k, v in self.id2rel.items():
             self.rel2id[v].add(k)
-
-        self.__gold_ent2cluster = gold_ent2cluster
 
     def run(self, num_layer=12):
         print("----- Start: run CaBE -----")
@@ -65,14 +69,14 @@ class CaBE:
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
-        output_ent2cluster, rel_outputs = self.__cluster(entities, relations)
+        output_ent2cluster, output_rel2cluster = self.__cluster(entities, relations)
         self.dump_clusters(output_ent2cluster, 'ent')
-        self.dump_clusters(rel_outputs, 'rel')
+        self.dump_clusters(output_rel2cluster, 'rel')
         print("--- End: cluster phrases ---")
 
         print("----- End: run CaBE -----")
 
-        return output_ent2cluster, rel_outputs
+        return output_ent2cluster, output_rel2cluster
 
     def __cluster(self, entities, relations):
         ent_raw_clusters = self.__cluster_entities(entities)
@@ -88,17 +92,25 @@ class CaBE:
             for phrase in cluster:
                 raw_ent2cluster[phrase] = ent
 
+        raw_rel2cluster = {}
+        for rel, cluster in rel_outputs.items():
+            for phrase in cluster:
+                raw_rel2cluster[phrase] = rel
+
         output_ent2cluster = {}
+        output_rel2cluster = {}
+
         for triple in self.triples:
 
-            sbj, obj = triple['triple_norm'][0], triple['triple_norm'][2]
+            sbj, rel, obj = triple['triple_norm'][0], triple['triple_norm'][1], triple['triple_norm'][2]
             triple_id = triple['_id']
-            sbj_u, obj_u = f'{sbj}|{triple_id}', f'{obj}|{triple_id}'
+            sbj_u, rel_u, obj_u = f'{sbj}|{triple_id}', f'{rel}|{triple_id}', f'{obj}|{triple_id}'
 
             output_ent2cluster[sbj_u] = raw_ent2cluster[sbj]
             output_ent2cluster[obj_u] = raw_ent2cluster[obj]
+            output_rel2cluster[rel_u] = raw_rel2cluster[rel]
 
-        return output_ent2cluster, rel_outputs
+        return output_ent2cluster, output_rel2cluster
 
     def __cluster_entities(self, entities):
         entity_cluster = AgglomerativeClustering(
@@ -122,11 +134,16 @@ class CaBE:
         if self.similarity != 'wasserstein':
             return self.similarity
 
-        return _wasserstein
+        return lambda X: pairwise_distances(X, metric=wasserstein_distance, n_jobs=-1)
+
 
     @property
     def gold_ent2cluster(self):
         return self.__gold_ent2cluster
+
+    @property
+    def gold_rel2cluster(self):
+        return self.__gold_rel2cluster
 
     def dump_clusters(self, clusters, prefix):
         threshold = f'{self.distance_threshold:.6f}'
@@ -135,7 +152,3 @@ class CaBE:
         file_path = hydra.utils.to_absolute_path(file_name)
         with open(file_path, 'wb') as f:
             pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def _wasserstein(X):
-    return pairwise_distances(X, metric=wasserstein_distance)

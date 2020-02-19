@@ -22,22 +22,25 @@ def read_triples(file_path):
 def extract_phrases(raw_triples):
     entities, relations = [], []
     gold_ent2cluster = {}
+    gold_rel2cluster = {}
     for raw_triple in raw_triples:
         triple_id = raw_triple['_id']
-        subject_phrase = raw_triple['triple_norm'][0]
-        relation_phrase = raw_triple['triple_norm'][1]
-        object_phrase = raw_triple['triple_norm'][2]
+        sub_phrase = raw_triple['triple_norm'][0]
+        rel_phrase = raw_triple['triple_norm'][1]
+        obj_phrase = raw_triple['triple_norm'][2]
 
         gold_link_sub = raw_triple['true_link']['subject']
         gold_link_obj = raw_triple['true_link']['object']
 
-        gold_ent2cluster[f'{subject_phrase}|{triple_id}'] = gold_link_sub
-        gold_ent2cluster[f'{object_phrase}|{triple_id}'] = gold_link_obj
+        gold_ent2cluster[f'{sub_phrase}|{triple_id}'] = gold_link_sub
+        gold_ent2cluster[f'{obj_phrase}|{triple_id}'] = gold_link_obj
 
-        entities.extend([subject_phrase, object_phrase])
-        relations.append(relation_phrase)
+        gold_rel2cluster[f'{rel_phrase}|{triple_id}'] = rel_phrase
 
-    return entities, relations, gold_ent2cluster
+        entities.extend([sub_phrase, obj_phrase])
+        relations.append(rel_phrase)
+
+    return entities, relations, gold_ent2cluster, gold_rel2cluster
 
 
 def canonical_phrases(clusters, id2phrase, id2freq):

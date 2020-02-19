@@ -77,7 +77,6 @@ def _micro_precision(output_cluster2ele, gold_ele2cluster):
             if ele not in gold_ele2cluster:
                 continue
             freq_map[gold_ele2cluster[ele]] += 1
-
         num_prec += max(freq_map.values())
 
     if total == 0:

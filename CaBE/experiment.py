@@ -82,7 +82,7 @@ def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
               "similarity": sim,
               "linkage": link}
 
-    macro_f1, micro_f1, pairwise_f1 = experiment(model, params)
+    (macro_f1, micro_f1, pairwise_f1), _ = experiment(model, params)
     log_name = '_'.join([f'{k}_{v}' for k, v in params.items()])
 
     return log_name, (macro_f1, micro_f1, pairwise_f1)
@@ -107,43 +107,56 @@ def experiment(model, params):
         log_param('Model Layer', num_layer)
         log_param('Clustering Threshold', threshold)
         log_param('Similarity', similarity)
+
         log_param('Linkage', linkage)
-
-        print("--- Start: evlaluate noun phrases ---")
-        evl = Evaluator(ent_outputs, model.gold_ent2cluster)
-
         param_log = f'Language Model: {enc_name}, Layer: {num_layer}, '\
             f'Threshold: {threshold}, Similarity: {similarity}, Linkage: {linkage}'
         print(param_log)
 
-        print('Macro Precision: {}'.format(evl.macro_precision))
-        log_metric('Macro Precision', evl.macro_precision)
-
-        print('Macro Recall: {}'.format(evl.macro_recall))
-        log_metric('Macro Recall', evl.macro_recall)
-
-        print('Macro F1: {}'.format(evl.macro_f1_score))
-        log_metric('Macro F1', evl.macro_f1_score)
-
-        print('Micro Precision: {}'.format(evl.micro_precision))
-        log_metric('Micro Precision', evl.micro_precision)
-
-        print('Micro Recall: {}'.format(evl.micro_recall))
-        log_metric('Micro Recall', evl.micro_recall)
-
-        print('Micro F1: {}'.format(evl.micro_f1_score))
-        log_metric('Micro F1', evl.micro_f1_score)
-
-        print('Pairwise Precision: {}'.format(evl.pairwise_precision))
-        log_metric('Pairwise Precision', evl.pairwise_precision)
-
-        print('Pairwise Recall: {}'.format(evl.pairwise_recall))
-
-
-        print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
-        log_metric('Pairwise F1', evl.pairwise_f1_score)
-
-        log_artifact(hydra.utils.to_absolute_path(LOG_PATH))
-
+        print("--- Start: evlaluate noun phrases ---")
+        ent_evl = Evaluator(ent_outputs, model.gold_ent2cluster)
+        eval_and_log(ent_evl)
+        ent_f1s = (ent_evl.macro_f1_score,
+                   ent_evl.micro_f1_score,
+                   ent_evl.pairwise_f1_score)
         print("--- End: evaluate noun phrases ---")
-    return evl.macro_f1_score, evl.micro_f1_score, evl.pairwise_f1_score
+
+        print("--- Start: evlaluate rel phrases ---")
+        rel_evl = Evaluator(rel_outputs, model.gold_rel2cluster)
+        eval_and_log(rel_evl)
+        rel_f1s = (rel_evl.macro_f1_score,
+                   rel_evl.micro_f1_score,
+                   rel_evl.pairwise_f1_score)
+        print("--- End: evaluate rel phrases ---")
+
+    return ent_f1s, rel_f1s
+
+
+def eval_and_log(evl):
+    print('Macro Precision: {}'.format(evl.macro_precision))
+    log_metric('Macro Precision', evl.macro_precision)
+
+    print('Macro Recall: {}'.format(evl.macro_recall))
+    log_metric('Macro Recall', evl.macro_recall)
+
+    print('Macro F1: {}'.format(evl.macro_f1_score))
+    log_metric('Macro F1', evl.macro_f1_score)
+
+    print('Micro Precision: {}'.format(evl.micro_precision))
+    log_metric('Micro Precision', evl.micro_precision)
+
+    print('Micro Recall: {}'.format(evl.micro_recall))
+    log_metric('Micro Recall', evl.micro_recall)
+
+    print('Micro F1: {}'.format(evl.micro_f1_score))
+    log_metric('Micro F1', evl.micro_f1_score)
+
+    print('Pairwise Precision: {}'.format(evl.pairwise_precision))
+    log_metric('Pairwise Precision', evl.pairwise_precision)
+
+    print('Pairwise Recall: {}'.format(evl.pairwise_recall))
+
+    print('Pairwise F1: {}'.format(evl.pairwise_f1_score))
+    log_metric('Pairwise F1', evl.pairwise_f1_score)
+
+    log_artifact(hydra.utils.to_absolute_path(LOG_PATH))
