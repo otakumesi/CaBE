@@ -184,9 +184,9 @@ def visualize_cluster(cfg):
 
     entities, relations = model.get_encoded_elems(num_layer=num_layer)
     ent2clusters, rel2clusters = model.read_clusters()
-
+    plt_path = f'plt_img/{model.cluster_dumped_path}'
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
     fig.suptitle('t-SNE of entities and relation clusters')
     scatter_tsne(entities, ent2clusters, axes[0])
     scatter_tsne(relations, rel2clusters, axes[1])
-    plt.show()
+    plt.savefig(get_abspath(plt_path))
