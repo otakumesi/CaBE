@@ -1,15 +1,22 @@
+import pickle
+import pandas as pd
 from itertools import product
+from multiprocessing import Pool
+
 import numpy as np
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+from matplotlib.colors import cnames
+
 import hydra
 import mlflow
 from mlflow import log_param, log_metric, log_artifact
-from multiprocessing import Pool
 
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
 import CaBE.language_model_encoder as lme
 
-
+CLUSTER_PATH = './pkls/clusters'
 LOG_PATH = './log'
 LMS = {'BERT': lme.BertEncoder,
        'BERT-attn': lme.BertAttentionEncoder,
@@ -160,3 +167,46 @@ def eval_and_log(evl):
     log_metric('Pairwise F1', evl.pairwise_f1_score)
 
     log_artifact(hydra.utils.to_absolute_path(LOG_PATH))
+
+
+def visualize_cluster(cfg):
+    file_name = cfg.ex.file_name
+    enc_name = cfg.ex.enc
+    linkage = cfg.model.linkage
+    similarity = cfg.ex.similarity
+    threshold = cfg.model.threshold
+
+    enc_model = LMS[enc_name]()
+    num_layer = cfg.model.num_layer or enc_model.default_max_layer
+
+    model = build_model(name=f'{enc_name}_{num_layer}',
+                        enc_model=enc_model,
+                        file_name=file_name,
+                        threshold=threshold,
+                        similarity=similarity,
+                        linkage=linkage)
+
+    entities, relations = model.get_encoded_elems(num_layer=num_layer)
+
+    names = [model.name, linkage, similarity, f'{threshold:.6f}']
+    file_path = f'{CLUSTER_PATH}/{file_name}/{"_".join(names)}.pkl'
+
+    path = hydra.utils.to_absolute_path(file_path)
+    with open(path, 'rb') as f:
+        ent2clusters, rel2clusters = pickle.load(f)
+
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+    fig.suptitle('t-SNE of entities and relation clusters')
+    _scatter_tsne(entities, ent2clusters, axes[0])
+    _scatter_tsne(relations, rel2clusters, axes[1])
+    plt.show()
+
+
+def _scatter_tsne(elems, ele2clusters, ax):
+    elems_reduced = TSNE(n_components=2, random_state=0).fit_transform(elems)
+    ele2id = {name: id for id, name in enumerate(ele2clusters.values())}
+    ids = [ele2id[name] for name in ele2clusters.values()]
+    ax.scatter(elems_reduced[:, 0], elems_reduced[:, 1], c=ids)
+    for i, phrase in enumerate(ele2clusters.keys()):
+        ax.annotate(phrase, (elems_reduced[i, 0], elems_reduced[i, 1]))
+

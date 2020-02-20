@@ -1,4 +1,5 @@
 import pickle
+import os
 from collections import Counter, defaultdict
 import hydra
 
@@ -51,6 +52,17 @@ class CaBE:
         for k, v in self.id2rel.items():
             self.rel2id[v].add(k)
 
+    def get_encoded_elems(self, num_layer=12):
+        ent_prefix = f'{self.file_name}_ent'
+        entities = self.model.encode(self.entities,
+                                     num_layer=num_layer,
+                                     file_prefix=ent_prefix)
+        rel_prefix = f'{self.file_name}_rel'
+        relations = self.model.encode(self.relations,
+                                      num_layer=num_layer,
+                                      file_prefix=rel_prefix)
+        return entities, relations
+
     def run(self, num_layer=12):
         print("----- Start: run CaBE -----")
 
@@ -69,65 +81,62 @@ class CaBE:
         print("--- End: encode relations ---")
 
         print("--- Start: cluster phrases ---")
-        output_ent2cluster, output_rel2cluster = self.__cluster(entities, relations)
-        self.dump_clusters(output_ent2cluster, 'ent')
-        self.dump_clusters(output_rel2cluster, 'rel')
+        ent2cluster, rel2cluster = self.__cluster(entities, relations)
+        self.dump_clusters((ent2cluster, rel2cluster))
         print("--- End: cluster phrases ---")
 
         print("----- End: run CaBE -----")
 
-        return output_ent2cluster, output_rel2cluster
+        return ent2cluster, rel2cluster
 
     def __cluster(self, entities, relations):
-        ent_raw_clusters = self.__cluster_entities(entities)
-        ent_outputs = canonical_phrases(
-            ent_raw_clusters, self.id2ent, self.ent2freq)
+        # threshold, affinity, linkageをentとrelでそれぞれ指定できるようにする前フリ
+        raw_ent2cluster = self.__output_cluster(entities,
+                                                self.id2ent,
+                                                self.ent2freq,
+                                                self.distance_threshold,
+                                                self.__affinity(),
+                                                self.linkage)
 
-        rel_raw_clusters = self.__cluster_relations(relations)
-        rel_outputs = canonical_phrases(
-            rel_raw_clusters, self.id2rel, self.rel2freq)
-
-        raw_ent2cluster = {}
-        for ent, cluster in ent_outputs.items():
-            for phrase in cluster:
-                raw_ent2cluster[phrase] = ent
-
-        raw_rel2cluster = {}
-        for rel, cluster in rel_outputs.items():
-            for phrase in cluster:
-                raw_rel2cluster[phrase] = rel
+        raw_rel2cluster = self.__output_cluster(relations,
+                                                self.id2rel,
+                                                self.rel2freq,
+                                                self.distance_threshold,
+                                                self.__affinity(),
+                                                self.linkage)
 
         output_ent2cluster = {}
         output_rel2cluster = {}
-
         for triple in self.triples:
-
             sbj, rel, obj = triple['triple_norm'][0], triple['triple_norm'][1], triple['triple_norm'][2]
             triple_id = triple['_id']
             sbj_u, rel_u, obj_u = f'{sbj}|{triple_id}', f'{rel}|{triple_id}', f'{obj}|{triple_id}'
-
             output_ent2cluster[sbj_u] = raw_ent2cluster[sbj]
             output_ent2cluster[obj_u] = raw_ent2cluster[obj]
             output_rel2cluster[rel_u] = raw_rel2cluster[rel]
-
         return output_ent2cluster, output_rel2cluster
 
-    def __cluster_entities(self, entities):
-        entity_cluster = AgglomerativeClustering(
-            distance_threshold=self.distance_threshold,
-            n_clusters=None,
-            affinity=self.__affinity(),
-            linkage=self.linkage)
-        assigned_clusters = entity_cluster.fit_predict(entities)
-        return transform_clusters(assigned_clusters)
+    def __output_cluster(self, elements, id2elem, elem2freq, threshold, affinity, linkage):
+        raw_clusters = self.__cluster_elems(elements,
+                                            threshold,
+                                            affinity,
+                                            linkage)
+        elem_outputs = canonical_phrases(raw_clusters, id2elem, elem2freq)
 
-    def __cluster_relations(self, relations):
-        relation_cluster = AgglomerativeClustering(
-            distance_threshold=self.distance_threshold,
+        raw_elem2cluster = {}
+        for ele, cluster in elem_outputs.items():
+            for phrase in cluster:
+                raw_elem2cluster[phrase] = ele
+
+        return raw_elem2cluster
+
+    def __cluster_elems(self, elements, threshold, affinity, linkage):
+        elem_cluster = AgglomerativeClustering(
+            distance_threshold=threshold,
             n_clusters=None,
-            affinity=self.__affinity(),
-            linkage=self.linkage)
-        assigned_clusters = relation_cluster.fit_predict(relations)
+            affinity=affinity,
+            linkage=linkage)
+        assigned_clusters = elem_cluster.fit_predict(elements)
         return transform_clusters(assigned_clusters)
 
     def __affinity(self):
@@ -135,7 +144,6 @@ class CaBE:
             return self.similarity
 
         return lambda X: pairwise_distances(X, metric=wasserstein_distance, n_jobs=-1)
-
 
     @property
     def gold_ent2cluster(self):
@@ -145,10 +153,14 @@ class CaBE:
     def gold_rel2cluster(self):
         return self.__gold_rel2cluster
 
-    def dump_clusters(self, clusters, prefix):
+    def dump_clusters(self, clusters):
         threshold = f'{self.distance_threshold:.6f}'
-        names = [prefix, self.name, self.linkage, self.similarity, threshold]
-        file_name = f'{CLUSTER_PATH}/{"_".join(names)}.pkl'
-        file_path = hydra.utils.to_absolute_path(file_name)
+        names = [self.name, self.linkage, self.similarity, threshold]
+
+        cluster_dir = f'{CLUSTER_PATH}/{self.file_name}'
+        os.makedirs(hydra.utils.to_absolute_path(cluster_dir), exist_ok=True)
+
+        file_path = f'{cluster_dir}/{"_".join(names)}.pkl'
+        file_path = hydra.utils.to_absolute_path(file_path)
         with open(file_path, 'wb') as f:
             pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)

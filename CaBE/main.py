@@ -1,5 +1,5 @@
 import hydra
-from CaBE.experiment import predict, grid_search
+from CaBE.experiment import predict, grid_search, visualize_cluster
 
 
 @hydra.main(config_path='../conf.yml', strict=False)
