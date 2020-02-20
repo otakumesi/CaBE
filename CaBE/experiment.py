@@ -1,3 +1,5 @@
+import os
+
 from itertools import product
 from multiprocessing import Pool
 
@@ -175,18 +177,42 @@ def visualize_cluster(cfg):
     enc_model = LMS[enc_name]()
     num_layer = cfg.model.num_layer or enc_model.default_max_layer
 
+    print('--- Start: build model ---')
     model = build_model(name=f'{enc_name}_{num_layer}',
                         enc_model=enc_model,
                         file_name=file_name,
                         threshold=threshold,
                         similarity=similarity,
                         linkage=linkage)
+    print('--- Start: build model ---')
 
+    print('--- Start: read phrases ---')
     entities, relations = model.get_encoded_elems(num_layer=num_layer)
+    print('--- End: read phrases ---')
+
+    print('--- Start: read clusters ---')
     ent2clusters, rel2clusters = model.read_clusters()
-    plt_path = f'plt_img/{model.cluster_dumped_path}'
+    print('--- End: read clusters ---')
+
+    plt_dir = f'plt_img/{model.cluster_dumped_dir}'
+    os.makedirs(get_abspath(plt_dir), exist_ok=True)
+
+    plt_path = f'{plt_dir}/{model.cluster_file_name}'
+
+    n_elems = cfg.vis.n_elems
+    if n_elems:
+        plt_path += f'_{n_elems}'
+    plt_path += f'.png'
+
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
     fig.suptitle('t-SNE of entities and relation clusters')
-    scatter_tsne(entities, ent2clusters, axes[0])
-    scatter_tsne(relations, rel2clusters, axes[1])
+
+    print('--- Start: plot noun phrases ---')
+    scatter_tsne(entities, ent2clusters, axes[0], n_elems)
+    print('--- End: plot noun phrases ---')
+
+    print('--- Start: plot rel phrases ---')
+    scatter_tsne(relations, rel2clusters, axes[1], n_elems)
+    print('--- End: plot rel phrases ---')
+
     plt.savefig(get_abspath(plt_path))

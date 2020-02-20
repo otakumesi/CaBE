@@ -71,11 +71,14 @@ def get_abspath(file_path):
     return hydra.utils.to_absolute_path(file_path)
 
 
-def scatter_tsne(elems, ele2clusters, ax):
+def scatter_tsne(elems, ele2clusters, ax, n_elems):
+    if not n_elems:
+        elems = elems[:n_elems]
     elems_reduced = TSNE(n_components=2, random_state=0).fit_transform(elems)
     ele2id = {name: id for id, name in enumerate(ele2clusters.values())}
     ids = [ele2id[name] for name in ele2clusters.values()]
     ax.scatter(elems_reduced[:, 0], elems_reduced[:, 1], c=ids)
-    for i, phrase in enumerate(ele2clusters.keys()):
+    u_elems = list(ele2clusters.keys())[:n_elems]
+    for i, phrase in enumerate(u_elems):
         ax.annotate(phrase, (elems_reduced[i, 0], elems_reduced[i, 1]))
 

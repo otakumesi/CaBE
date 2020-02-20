@@ -21,3 +21,6 @@ grid_search:
     - average
     - single
     - complete
+
+vis:
+  n_elems:

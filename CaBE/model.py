@@ -146,6 +146,7 @@ class CaBE:
         return lambda X: pairwise_distances(X, metric=wasserstein_distance, n_jobs=-1)
 
     def dump_clusters(self, clusters):
+        os.makedirs(hlp.get_abspath(self.cluster_dumped_dir), exist_ok=True)
         with open(hlp.get_abspath(self.cluster_dumped_path), 'wb') as f:
             pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -162,11 +163,15 @@ class CaBE:
         return self.__gold_rel2cluster
 
     @property
-    def cluster_dumped_path(self):
+    def cluster_dumped_dir(self):
+        return f'{CLUSTER_PATH}/{self.file_name}'
+
+    @property
+    def cluster_file_name(self):
         threshold = f'{self.distance_threshold:.6f}'
         names = [self.name, self.linkage, self.similarity, threshold]
+        return "_".join(names)
 
-        cluster_dir = f'{CLUSTER_PATH}/{self.file_name}'
-        os.makedirs(hlp.get_abspath(cluster_dir), exist_ok=True)
-
-        return f'{cluster_dir}/{"_".join(names)}.pkl'
+    @property
+    def cluster_dumped_path(self):
+        return f'{self.cluster_dumped_dir}/{self.cluster_file_name}.pkl'
