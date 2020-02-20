@@ -3,9 +3,10 @@ import os
 
 import numpy as np
 import torch
-import hydra
 from transformers import BertTokenizer, BertModel
 from allennlp.commands.elmo import ElmoEmbedder
+
+from CaBE.helper import get_abspath
 
 ELEM_FILE_PATH = './pkls/elems'
 DEFAULT_FILE_PREFIX = 'elem'
@@ -42,7 +43,7 @@ class BertEncoder:
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
-        emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
+        emb_pkl_path = get_abspath(emb_pkl_path)
 
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
@@ -89,7 +90,7 @@ class BertAttentionEncoder:
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = f'{ELEM_FILE_PATH}/attn_{file_prefix}_{self.pretrained_name}.pkl'
-        emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
+        emb_pkl_path = get_abspath(emb_pkl_path)
 
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
@@ -123,7 +124,7 @@ class ElmoEncoder:
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
-        emb_pkl_path = hydra.utils.to_absolute_path(emb_pkl_path)
+        emb_pkl_path = get_abspath(emb_pkl_path)
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
                 encoded_phrases = pickle.load(f)

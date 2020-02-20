@@ -1,7 +1,10 @@
 import pickle
+import hydra
+
 import os
 import json
 from collections import defaultdict
+from sklearn.manifold import TSNE
 
 
 def read_triples(file_path):
@@ -62,3 +65,17 @@ def transform_clusters(cluster_values):
     for ent_id, cluster in enumerate(cluster_values):
         clusters[cluster].append(ent_id)
     return clusters
+
+
+def get_abspath(file_path):
+    return hydra.utils.to_absolute_path(file_path)
+
+
+def scatter_tsne(elems, ele2clusters, ax):
+    elems_reduced = TSNE(n_components=2, random_state=0).fit_transform(elems)
+    ele2id = {name: id for id, name in enumerate(ele2clusters.values())}
+    ids = [ele2id[name] for name in ele2clusters.values()]
+    ax.scatter(elems_reduced[:, 0], elems_reduced[:, 1], c=ids)
+    for i, phrase in enumerate(ele2clusters.keys()):
+        ax.annotate(phrase, (elems_reduced[i, 0], elems_reduced[i, 1]))
+

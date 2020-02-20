@@ -8,7 +8,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import pairwise_distances
 from scipy.stats import wasserstein_distance
 
-from CaBE.helper import read_triples, extract_phrases, canonical_phrases, transform_clusters
+import CaBE.helper as hlp
 
 DATA_PATH = './data'
 CLUSTER_PATH = './pkls/clusters'
@@ -22,15 +22,15 @@ class CaBE:
         self.linkage = linkage
         self.similarity = similarity
         self.file_name = file_name
-        file_path = hydra.utils.to_absolute_path(f'{DATA_PATH}/{file_name}')
+        file_path = hlp.get_abspath(f'{DATA_PATH}/{file_name}')
         self.__init_triples(file_path)
 
     def __init_triples(self, file_path):
-        raw_triples = read_triples(file_path)
+        raw_triples = hlp.read_triples(file_path)
         (raw_ents,
          raw_rels,
          gold_ent2cluster,
-         gold_rel2cluster) = extract_phrases(raw_triples)
+         gold_rel2cluster) = hlp.extract_phrases(raw_triples)
 
         self.__gold_ent2cluster = gold_ent2cluster
         self.__gold_rel2cluster = gold_rel2cluster
@@ -121,7 +121,7 @@ class CaBE:
                                             threshold,
                                             affinity,
                                             linkage)
-        elem_outputs = canonical_phrases(raw_clusters, id2elem, elem2freq)
+        elem_outputs = hlp.canonical_phrases(raw_clusters, id2elem, elem2freq)
 
         raw_elem2cluster = {}
         for ele, cluster in elem_outputs.items():
@@ -137,13 +137,21 @@ class CaBE:
             affinity=affinity,
             linkage=linkage)
         assigned_clusters = elem_cluster.fit_predict(elements)
-        return transform_clusters(assigned_clusters)
+        return hlp.transform_clusters(assigned_clusters)
 
     def __affinity(self):
         if self.similarity != 'wasserstein':
             return self.similarity
 
         return lambda X: pairwise_distances(X, metric=wasserstein_distance, n_jobs=-1)
+
+    def dump_clusters(self, clusters):
+        with open(hlp.get_abspath(self.cluster_dumped_path), 'wb') as f:
+            pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def read_clusters(self):
+        with open(hlp.get_abspath(self.cluster_dumped_path), 'rb') as f:
+            return pickle.load(f)
 
     @property
     def gold_ent2cluster(self):
@@ -153,14 +161,12 @@ class CaBE:
     def gold_rel2cluster(self):
         return self.__gold_rel2cluster
 
-    def dump_clusters(self, clusters):
+    @property
+    def cluster_dumped_path(self):
         threshold = f'{self.distance_threshold:.6f}'
         names = [self.name, self.linkage, self.similarity, threshold]
 
         cluster_dir = f'{CLUSTER_PATH}/{self.file_name}'
-        os.makedirs(hydra.utils.to_absolute_path(cluster_dir), exist_ok=True)
+        os.makedirs(hlp.get_abspath(cluster_dir), exist_ok=True)
 
-        file_path = f'{cluster_dir}/{"_".join(names)}.pkl'
-        file_path = hydra.utils.to_absolute_path(file_path)
-        with open(file_path, 'wb') as f:
-            pickle.dump(clusters, f, protocol=pickle.HIGHEST_PROTOCOL)
+        return f'{cluster_dir}/{"_".join(names)}.pkl'
