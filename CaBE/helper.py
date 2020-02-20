@@ -72,13 +72,18 @@ def get_abspath(file_path):
 
 
 def scatter_tsne(elems, ele2clusters, ax, n_elems):
+    u_elems = ele2clusters.keys()
+    clusters = ele2clusters.values()
+
     if not n_elems:
         elems = elems[:n_elems]
+        u_elems = list(u_elems)[:n_elems]
+        clusters = list(ele2clusters.values())[:n_elems]
+
     elems_reduced = TSNE(n_components=2, random_state=0).fit_transform(elems)
-    ele2id = {name: id for id, name in enumerate(ele2clusters.values())}
-    ids = [ele2id[name] for name in ele2clusters.values()]
+    ele2id = {name: id for id, name in enumerate(clusters)}
+    ids = [ele2id[name] for name in clusters]
     ax.scatter(elems_reduced[:, 0], elems_reduced[:, 1], c=ids)
-    u_elems = list(ele2clusters.keys())[:n_elems]
     for i, phrase in enumerate(u_elems):
         ax.annotate(phrase, (elems_reduced[i, 0], elems_reduced[i, 1]))
 
