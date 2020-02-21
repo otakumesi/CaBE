@@ -204,7 +204,7 @@ def visualize_cluster(cfg):
     if n_min_elems:
         plt_path += f'_min{n_min_elems}'
     if n_max_elems:
-        plt_path += f'_max{n_min_elems}'
+        plt_path += f'_max{n_max_elems}'
     plt_path += f'.png'
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
