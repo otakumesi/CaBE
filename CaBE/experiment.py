@@ -11,6 +11,7 @@ from mlflow import log_param, log_metric, log_artifact
 
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
+from CaBE.clustering import HAC, HDBSCAN
 import CaBE.language_model_encoder as lme
 from CaBE.helper import get_abspath, scatter_tsne
 
@@ -30,12 +31,14 @@ def predict(cfg):
     enc_model = LMS[enc_name]()
     num_layer = cfg.model.num_layer or enc_model.default_max_layer
 
+    # clustering = HAC(distance_threshold=threshold,
+    #                  similarity=similarity,
+    #                  linkage=linkage)
+    clustering = HDBSCAN(similarity=similarity)
     model = build_model(name=f'{enc_name}_{num_layer}',
                         enc_model=enc_model,
                         file_name=cfg.ex.file_name,
-                        threshold=threshold,
-                        similarity=similarity,
-                        linkage=linkage)
+                        clustering=clustering)
 
     params = {"enc_name": enc_name,
               "num_layer": num_layer,
@@ -74,12 +77,15 @@ def grid_search(cfg):
 
 
 def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
+    # clustering = HAC(distance_threshold=thd,
+    #                  similarity=sim,
+    #                  linkage=link)
+    clustering = HDBSCAN(similarity=sim)
+
     model = build_model(name=f'{enc_name}_{layer}',
                         enc_model=enc,
                         file_name=file_name,
-                        threshold=thd,
-                        similarity=sim,
-                        linkage=link)
+                        clustering=clustering)
 
     params = {"enc_name": enc_name,
               "num_layer": layer,
@@ -93,13 +99,11 @@ def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
     return log_name, (macro_f1, micro_f1, pairwise_f1)
 
 
-def build_model(name, enc_model, file_name, threshold, similarity, linkage):
+def build_model(name, enc_model, file_name, clustering):
     return CaBE(name=name,
                 model=enc_model,
                 file_name=file_name,
-                distance_threshold=threshold,
-                similarity=similarity,
-                linkage=linkage)
+                clustering=clustering)
 
 
 def experiment(model, params):
@@ -178,12 +182,13 @@ def visualize_cluster(cfg):
     num_layer = cfg.model.num_layer or enc_model.default_max_layer
 
     print('--- Start: build model ---')
+    clustering = HAC(distance_threshold=threshold,
+                     similarity=similarity,
+                     linkage=linkage)
     model = build_model(name=f'{enc_name}_{num_layer}',
                         enc_model=enc_model,
                         file_name=file_name,
-                        threshold=threshold,
-                        similarity=similarity,
-                        linkage=linkage)
+                        clustering=clustering)
     print('--- End: build model ---')
 
     print('--- Start: read phrases ---')

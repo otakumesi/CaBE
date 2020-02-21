@@ -1,12 +1,6 @@
 import pickle
 import os
 from collections import Counter, defaultdict
-import hydra
-
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics import pairwise_distances
-from scipy.stats import wasserstein_distance
 
 import CaBE.helper as hlp
 
@@ -15,12 +9,10 @@ CLUSTER_PATH = './pkls/clusters'
 
 
 class CaBE:
-    def __init__(self, name, model, file_name, distance_threshold, similarity, linkage):
+    def __init__(self, name, model, file_name, clustering):
         self.name = name
         self.model = model
-        self.distance_threshold = distance_threshold
-        self.linkage = linkage
-        self.similarity = similarity
+        self.clustering = clustering
         self.file_name = file_name
         file_path = hlp.get_abspath(f'{DATA_PATH}/{file_name}')
         self.__init_triples(file_path)
@@ -90,20 +82,8 @@ class CaBE:
         return ent2cluster, rel2cluster
 
     def __cluster(self, entities, relations):
-        # threshold, affinity, linkageをentとrelでそれぞれ指定できるようにする前フリ
-        raw_ent2cluster = self.__output_cluster(entities,
-                                                self.id2ent,
-                                                self.ent2freq,
-                                                self.distance_threshold,
-                                                self.__affinity(),
-                                                self.linkage)
-
-        raw_rel2cluster = self.__output_cluster(relations,
-                                                self.id2rel,
-                                                self.rel2freq,
-                                                self.distance_threshold,
-                                                self.__affinity(),
-                                                self.linkage)
+        raw_ent2cluster = self.__gen_cluster(entities, self.id2ent, self.ent2freq)
+        raw_rel2cluster = self.__gen_cluster(relations, self.id2rel, self.rel2freq)
 
         output_ent2cluster = {}
         output_rel2cluster = {}
@@ -116,11 +96,8 @@ class CaBE:
             output_rel2cluster[rel_u] = raw_rel2cluster[rel]
         return output_ent2cluster, output_rel2cluster
 
-    def __output_cluster(self, elements, id2elem, elem2freq, threshold, affinity, linkage):
-        raw_clusters = self.__cluster_elems(elements,
-                                            threshold,
-                                            affinity,
-                                            linkage)
+    def __gen_cluster(self, elements, id2elem, elem2freq):
+        raw_clusters = self.clustering.run(elements)
         elem_outputs = hlp.canonical_phrases(raw_clusters, id2elem, elem2freq)
 
         raw_elem2cluster = {}
@@ -129,21 +106,6 @@ class CaBE:
                 raw_elem2cluster[phrase] = ele
 
         return raw_elem2cluster
-
-    def __cluster_elems(self, elements, threshold, affinity, linkage):
-        elem_cluster = AgglomerativeClustering(
-            distance_threshold=threshold,
-            n_clusters=None,
-            affinity=affinity,
-            linkage=linkage)
-        assigned_clusters = elem_cluster.fit_predict(elements)
-        return hlp.transform_clusters(assigned_clusters)
-
-    def __affinity(self):
-        if self.similarity != 'wasserstein':
-            return self.similarity
-
-        return lambda X: pairwise_distances(X, metric=wasserstein_distance, n_jobs=-1)
 
     def dump_clusters(self, clusters):
         os.makedirs(hlp.get_abspath(self.cluster_dumped_dir), exist_ok=True)
@@ -168,9 +130,7 @@ class CaBE:
 
     @property
     def cluster_file_name(self):
-        threshold = f'{self.distance_threshold:.6f}'
-        names = [self.name, self.linkage, self.similarity, threshold]
-        return "_".join(names)
+        return self.clustering.file_name(self.name)
 
     @property
     def cluster_dumped_path(self):
