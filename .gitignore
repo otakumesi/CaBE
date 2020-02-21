@@ -183,5 +183,6 @@ flycheck_*.el
 /data/*
 /pkls/elems/*
 /pkls/clusters/*
+/plt_img/*
 !.gitkeep
 /outputs
