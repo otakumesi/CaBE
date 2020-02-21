@@ -75,7 +75,7 @@ def scatter_tsne(elems, ele2clusters, ax, n_elems):
     u_elems = ele2clusters.keys()
     clusters = ele2clusters.values()
 
-    if not n_elems:
+    if n_elems:
         elems = elems[:n_elems]
         u_elems = list(u_elems)[:n_elems]
         clusters = list(ele2clusters.values())[:n_elems]
