@@ -184,7 +184,7 @@ def visualize_cluster(cfg):
                         threshold=threshold,
                         similarity=similarity,
                         linkage=linkage)
-    print('--- Start: build model ---')
+    print('--- End: build model ---')
 
     print('--- Start: read phrases ---')
     entities, relations = model.get_encoded_elems(num_layer=num_layer)
@@ -199,20 +199,23 @@ def visualize_cluster(cfg):
 
     plt_path = f'{plt_dir}/{model.cluster_file_name}'
 
-    n_elems = cfg.vis.n_elems
-    if n_elems:
-        plt_path += f'_{n_elems}'
+    n_min_elems = cfg.vis.n_min_elems
+    n_max_elems = cfg.vis.n_max_elems
+    if n_min_elems:
+        plt_path += f'_min{n_min_elems}'
+    if n_max_elems:
+        plt_path += f'_max{n_min_elems}'
     plt_path += f'.png'
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 10))
     fig.suptitle('t-SNE of entities and relation clusters')
 
     print('--- Start: plot noun phrases ---')
-    scatter_tsne(entities, ent2clusters, axes[0], n_elems)
+    scatter_tsne(entities, ent2clusters, axes[0], n_max_elems, n_min_elems)
     print('--- End: plot noun phrases ---')
 
     print('--- Start: plot rel phrases ---')
-    scatter_tsne(relations, rel2clusters, axes[1], n_elems)
+    scatter_tsne(relations, rel2clusters, axes[1], n_max_elems, n_min_elems)
     print('--- End: plot rel phrases ---')
 
     plt.savefig(get_abspath(plt_path))

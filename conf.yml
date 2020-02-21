@@ -23,4 +23,5 @@ grid_search:
     - complete
 
 vis:
-  n_elems:
+  n_min_elems:
+  n_max_elems:
