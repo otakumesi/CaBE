@@ -9,6 +9,7 @@ model:
   num_layer: 
   threshold: .01
   linkage: average
+  cluster_size: 2
 
 grid_search:
   num_process: 8

@@ -34,7 +34,7 @@ def predict(cfg):
     # clustering = HAC(distance_threshold=threshold,
     #                  similarity=similarity,
     #                  linkage=linkage)
-    clustering = HDBSCAN(similarity=similarity)
+    clustering = HDBSCAN(similarity=similarity, cluster_size=cfg.model.cluster_size)
     model = build_model(name=f'{enc_name}_{num_layer}',
                         enc_model=enc_model,
                         file_name=cfg.ex.file_name,

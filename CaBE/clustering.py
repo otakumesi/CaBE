@@ -35,9 +35,9 @@ class HAC:
 
 
 class HDBSCAN:
-    def __init__(self, similarity):
+    def __init__(self, similarity, cluster_size):
         self.similarity = similarity
-        self.clustering = hdbscan.HDBSCAN(min_cluster_size=2,
+        self.clustering = hdbscan.HDBSCAN(min_cluster_size=cluster_size,
                                           gen_min_span_tree=True,
                                           metric=self.similarity)
 
