@@ -40,7 +40,6 @@ class BertEncoder:
             os.makedirs(path, exist_ok=True)
             self.model.save_pretrained(path)
             self.tokenizer.save_pretrained(path)
-        self.model.eval()
 
     def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'

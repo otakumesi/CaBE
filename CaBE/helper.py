@@ -83,10 +83,9 @@ def scatter_tsne(elems, ele2clusters, ax, n_max_elems, n_min_elems):
         u_elems = list(u_elems)[n_min_elems:n_max_elems]
         clusters = list(ele2clusters.values())[n_min_elems:n_max_elems]
 
-    elems_reduced = TSNE(n_components=2, random_state=0).fit_transform(elems)
+    elems_reduced = TSNE(n_components=2, random_state=None).fit_transform(elems)
     ele2id = {name: id for id, name in enumerate(clusters)}
     ids = [ele2id[name] for name in clusters]
     ax.scatter(elems_reduced[:, 0], elems_reduced[:, 1], c=ids)
     for i, phrase in enumerate(u_elems):
         ax.annotate(phrase, (elems_reduced[i, 0], elems_reduced[i, 1]))
-
