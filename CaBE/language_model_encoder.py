@@ -41,31 +41,49 @@ class BertEncoder:
             self.model.save_pretrained(path)
             self.tokenizer.save_pretrained(path)
 
-    def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+    def encode(self, triples, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
         emb_pkl_path = get_abspath(emb_pkl_path)
 
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
-                return pickle.load(f)[:, num_layer, :]
+                ents, rels = pickle.load(f)
+                return ents[:, num_layer, :], rels[:, num_layer, :]
 
         token_ids_list = []
-        for phrase in phrases:
-            token_ids = self.tokenizer.encode(phrase,
-                                              max_length=7,
-                                              pad_to_max_length=True)
+        token_lens_list = []
+        for phrases in triples:
+            tokens_triple = [self.tokenizer.tokenize(phrase) for phrase in phrases]
+            token_lens_list.append([len(tokens) for tokens in tokens_triple])
+            token_ids = self.tokenizer.convert_tokens_to_ids(sum(tokens_triple, []))
             token_ids_list.append(torch.tensor(token_ids, dtype=torch.long))
-        token_ids_list = torch.stack(token_ids_list, axis=0)
 
+        ent_of_layers = []
+        rel_of_layers = []
+        model_prepared_list = zip(token_ids_list, token_lens_list)
         with torch.no_grad():
-            _, _, hid_states = self.model(token_ids_list)
-            hid_states = torch.stack(hid_states, axis=0).transpose(0, 1)
-            enc_phrases_of_layers = torch.mean(hid_states, axis=2)
+            for token_ids, (sbj_l, rel_l, obj_l) in model_prepared_list:
+                _, _, hid_states = self.model(token_ids.unsqueeze(0))
+                hid_states = torch.stack(hid_states, axis=0).squeeze(1)
 
-            with open(emb_pkl_path, 'wb') as f:
-                pickle.dump(enc_phrases_of_layers, f,
-                            protocol=pickle.HIGHEST_PROTOCOL)
-        return enc_phrases_of_layers[:, num_layer, :]
+                sbj_states = hid_states[:, :sbj_l, :]
+                ent_of_layers.append(torch.mean(sbj_states, axis=1))
+
+                rel_l_padded = sbj_l + rel_l
+                rel_states = hid_states[:, sbj_l:rel_l_padded, :]
+                rel_of_layers.append(torch.mean(rel_states, axis=1))
+
+                obj_l_paddded = rel_l_padded + obj_l
+                obj_states = hid_states[:, rel_l:obj_l_paddded, :]
+                ent_of_layers.append(torch.mean(obj_states, axis=1))
+
+        ent_of_layers = torch.stack(ent_of_layers, axis=0)
+        rel_of_layers = torch.stack(rel_of_layers, axis=0)
+
+        with open(emb_pkl_path, 'wb') as f:
+            pickle.dump((ent_of_layers, rel_of_layers), f,
+                        protocol=pickle.HIGHEST_PROTOCOL)
+        return ent_of_layers[:, num_layer, :], rel_of_layers[:, num_layer, :]
 
 
 class BertAttentionEncoder:

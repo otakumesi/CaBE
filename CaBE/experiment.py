@@ -31,10 +31,9 @@ def predict(cfg):
     enc_model = LMS[enc_name]()
     num_layer = cfg.model.num_layer or enc_model.default_max_layer
 
-    # clustering = HAC(distance_threshold=threshold,
-    #                  similarity=similarity,
-    #                  linkage=linkage)
-    clustering = HDBSCAN(similarity=similarity, cluster_size=cfg.model.cluster_size)
+    clustering = HAC(distance_threshold=threshold,
+                     similarity=similarity,
+                     linkage=linkage)
     model = build_model(name=f'{enc_name}_{num_layer}',
                         enc_model=enc_model,
                         file_name=cfg.ex.file_name,
@@ -77,10 +76,9 @@ def grid_search(cfg):
 
 
 def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
-    # clustering = HAC(distance_threshold=thd,
-    #                  similarity=sim,
-    #                  linkage=link)
-    clustering = HDBSCAN(similarity=sim)
+    clustering = HAC(distance_threshold=thd,
+                     similarity=sim,
+                     linkage=link)
 
     model = build_model(name=f'{enc_name}_{layer}',
                         enc_model=enc,

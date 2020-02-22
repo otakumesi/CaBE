@@ -22,7 +22,7 @@ class HAC:
         return hlp.transform_clusters(assigned_clusters)
 
     def file_name(self, name):
-        threshold = f'{self.distance_threshold:.6f}'
+        threshold = f'{self.threshold:.6f}'
         names = [name, self.linkage, self.similarity, threshold]
         return "_".join(names)
       

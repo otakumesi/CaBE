@@ -42,6 +42,8 @@ class Evaluator:
     def pairwise_f1_score(self):
         deno = self.pairwise_precision + self.pairwise_recall
         nume = self.pairwise_precision * self.pairwise_recall
+        if deno == 0:
+            return 0
         return 2 * (nume / deno)
 
 
