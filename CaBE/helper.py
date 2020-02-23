@@ -1,9 +1,9 @@
 import pickle
-import hydra
-
 import os
 import json
 from collections import defaultdict
+
+import hydra
 from sklearn.manifold import TSNE
 
 
@@ -22,17 +22,12 @@ def read_triples(file_path):
     return triples
 
 
-def canonical_phrases(clusters, id2phrase, id2freq):
-    canonicalized_phrases = defaultdict(list)
+def canonical_phrases(clusters, id2phrase):
+    canonicalized_phrases = {}
     for phrase_ids in clusters.values():
-        representative = id2phrase[phrase_ids[0]]
-        cluster_phrases = set()
-        for phrase_id in phrase_ids:
-            current_phrase = id2phrase[phrase_id]
-            cluster_phrases.add(current_phrase)
-            if id2freq[representative] < id2freq[current_phrase]:
-                representative = current_phrase
-        canonicalized_phrases[representative] = list(cluster_phrases)
+        u_phrases = [id2phrase[p_id] for p_id in phrase_ids]
+        representative = u_phrases[0]
+        canonicalized_phrases[representative] = u_phrases
     return canonicalized_phrases
 
 

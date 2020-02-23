@@ -1,5 +1,5 @@
 from CaBE.helper import read_triples
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 
 class Triples:
@@ -31,28 +31,25 @@ class Triples:
             obj = raw_triple['triple'][2]
 
             sbj_u = f'{sbj}|{triple_id}'
-            obj_u = f'{obj}|{triple_id}'
             rel_u = f'{rel}|{triple_id}'
+            obj_u = f'{obj}|{triple_id}'
 
             gold_link_sbj = raw_triple['true_link']['subject']
             gold_link_obj = raw_triple['true_link']['object']
 
             self.gold_ent2cluster[sbj_u] = gold_link_sbj
-            self.gold_ent2cluster[obj_u] = gold_link_obj
             self.gold_rel2cluster[rel_u] = rel
+            self.gold_ent2cluster[obj_u] = gold_link_obj
 
             self.triples.append((sbj, rel, obj))
-            self.entities.extend([sbj, obj])
-            self.relations.append(rel)
+            self.entities.extend([sbj_u, obj_u])
+            self.relations.append(rel_u)
 
             self.sbj2sbj_u[sbj] = sbj_u
             self.obj2obj_u[obj] = obj_u
             self.rel2rel_u[rel] = rel_u
 
     def __after_init(self):
-        self.ent2freq = Counter(self.entities)
-        self.rel2freq = Counter(self.relations)
-
         self.id2ent = {k: v for k, v in enumerate(self.entities)}
         self.ent2id = defaultdict(set)
         for k, v in self.id2ent.items():
@@ -62,7 +59,3 @@ class Triples:
         self.rel2id = defaultdict(set)
         for k, v in self.id2rel.items():
             self.rel2id[v].add(k)
-
-    @property
-    def src_sents_with_triples(self):
-        return zip(self.src_sents, self.triples)

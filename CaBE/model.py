@@ -32,7 +32,9 @@ class CaBE:
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode phrases ---")
-        entities, relations = self.model.encode(self.data.triples, num_layer=num_layer)
+        entities, relations = self.model.encode(self.data.triples,
+                                                num_layer=num_layer,
+                                                file_prefix=self.file_name)
         print("--- End: encode phrases ---")
 
         print("--- Start: cluster phrases ---")
@@ -45,25 +47,13 @@ class CaBE:
         return ent2cluster, rel2cluster
 
     def __cluster(self, entities, relations):
-        raw_ent2cluster = self.__gen_cluster(entities,
-                                             self.data.id2ent,
-                                             self.data.ent2freq)
-        raw_rel2cluster = self.__gen_cluster(relations,
-                                             self.data.id2rel,
-                                             self.data.rel2freq)
-
-        ent2cluster = {}
-        rel2cluster = {}
-        for sbj, rel, obj in self.data.triples:
-            ent2cluster[self.data.sbj2sbj_u[sbj]] = raw_ent2cluster[sbj]
-            rel2cluster[self.data.rel2rel_u[rel]] = raw_rel2cluster[rel]
-            ent2cluster[self.data.obj2obj_u[obj]] = raw_ent2cluster[obj]
+        ent2cluster = self.__gen_cluster(entities, self.data.id2ent)
+        rel2cluster = self.__gen_cluster(relations, self.data.id2rel)
         return ent2cluster, rel2cluster
 
-    def __gen_cluster(self, elements, id2elem, elem2freq):
+    def __gen_cluster(self, elements, id2elem):
         raw_clusters = self.clustering.run(elements)
-        elem_outputs = hlp.canonical_phrases(raw_clusters, id2elem, elem2freq)
-
+        elem_outputs = hlp.canonical_phrases(raw_clusters, id2elem)
         raw_elem2cluster = {}
         for ele, cluster in elem_outputs.items():
             for phrase in cluster:
