@@ -27,23 +27,12 @@ class BertEncoder:
     def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
         self.pretrained_name = pretrained_name
 
-        path = f'{SAVED_MODEL_PATH}_{pretrained_name}'
-        if os.path.exists(path) and os.listdir(path):
-            self.model = BertModel.from_pretrained(path,
-                                                   output_hidden_states=True)
-            self.tokenizer = BertTokenizer.from_pretrained(path)
-        else:
-            self.model = BertModel.from_pretrained(pretrained_name,
-                                                   output_hidden_states=True)
-            self.tokenizer = BertTokenizer.from_pretrained(pretrained_name)
+        self.model, self.tokenizer = _init_pretrained_model(BertModel,
+                                                            BertTokenizer,
+                                                            pretrained_name)
 
-            os.makedirs(path, exist_ok=True)
-            self.model.save_pretrained(path)
-            self.tokenizer.save_pretrained(path)
-
-    def encode(self, triples, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
-        emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
-        emb_pkl_path = get_abspath(emb_pkl_path)
+    def encode(self, data, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+        emb_pkl_path = embed_elements_path(file_prefix, self.pretrained_name)
 
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
@@ -52,7 +41,7 @@ class BertEncoder:
 
         token_ids_list = []
         token_lens_list = []
-        for phrases in triples:
+        for phrases in data.triples:
             tokens_triple = [self.tokenizer.tokenize(phrase) for phrase in phrases]
             token_lens_list.append([len(tokens) for tokens in tokens_triple])
             token_ids = self.tokenizer.convert_tokens_to_ids(sum(tokens_triple, []))
@@ -86,53 +75,6 @@ class BertEncoder:
         return ent_of_layers[:, num_layer, :], rel_of_layers[:, num_layer, :]
 
 
-class BertAttentionEncoder:
-    default_max_layer = 24
-
-    def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
-        self.pretrained_name = pretrained_name
-
-        path = f'{SAVED_MODEL_PATH}_{pretrained_name}'
-        if os.path.exists(path) and os.listdir(path):
-            self.model = BertModel.from_pretrained(path,
-                                                   output_hidden_states=True)
-            self.tokenizer = BertTokenizer.from_pretrained(path)
-        else:
-            self.model = BertModel.from_pretrained(pretrained_name,
-                                                   output_attentions=True)
-            self.tokenizer = BertTokenizer.from_pretrained(pretrained_name)
-
-            os.makedirs(path, exist_ok=True)
-            self.model.save_pretrained(path)
-            self.tokenizer.save_pretrained(path)
-
-    def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
-        emb_pkl_path = f'{ELEM_FILE_PATH}/attn_{file_prefix}_{self.pretrained_name}.pkl'
-        emb_pkl_path = get_abspath(emb_pkl_path)
-
-        if os.path.isfile(emb_pkl_path):
-            with open(emb_pkl_path, 'rb') as f:
-                return pickle.load(f)[:, num_layer, :]
-
-        token_ids_list = []
-        for phrase in phrases:
-            token_ids = self.tokenizer.encode(phrase,
-                                              max_length=7,
-                                              pad_to_max_length=True)
-            token_ids_list.append(torch.tensor(token_ids, dtype=torch.long))
-        token_ids_list = torch.stack(token_ids_list, axis=0)
-
-        with torch.no_grad():
-            _, _, attentions = self.model(token_ids_list)
-            attentions = torch.stack(attentions, axis=0).transpose(0, 1)
-            mean_attns_of_layers = torch.mean(attentions, axis=2)
-
-            with open(emb_pkl_path, 'wb') as f:
-                pickle.dump(mean_attns_of_layers, f,
-                            protocol=pickle.HIGHEST_PROTOCOL)
-        return mean_attns_of_layers[:, num_layer, :]
-
-
 class ElmoEncoder:
     default_max_layer = 2
 
@@ -140,16 +82,39 @@ class ElmoEncoder:
         self.model = ElmoEmbedder(PRETRAINED_ELMO_OPTION_URL,
                                   PRETRAINED_ELMO_WEIGHT_URL)
 
-    def encode(self, phrases, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
-        emb_pkl_path = f'{ELEM_FILE_PATH}/{file_prefix}_{self.pretrained_name}.pkl'
-        emb_pkl_path = get_abspath(emb_pkl_path)
+    def encode(self, data, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+        emb_pkl_path = embed_elements_path(file_prefix, self.pretrained_name)
+
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
-                encoded_phrases = pickle.load(f)
+                entities, relations = pickle.load(f)
         else:
-            encoded_phrases = self.model.embed_sentence(phrases)
+
+            entities = self.model.embed_sentence(data.entities)
+            relations = self.model.embed_sentence(data.relations)
             with open(emb_pkl_path, 'wb') as f:
-                pickle.dump(encoded_phrases, f,
+                pickle.dump((entities, relations), f,
                             protocol=pickle.HIGHEST_PROTOCOL)
 
-        return encoded_phrases[num_layer]
+        return entities[num_layer], relations[num_layer]
+
+
+def embed_elements_path(file_prefix, pretrained_name):
+    return get_abspath(f'{ELEM_FILE_PATH}/{file_prefix}_{pretrained_name}.pkl')
+
+
+def _init_pretrained_model(model, tokenizer, pretrained_name):
+    save_path = f'{SAVED_MODEL_PATH}_{pretrained_name}'
+    if os.path.exists(save_path) and os.listdir(save_path):
+        model = BertModel.from_pretrained(save_path,
+                                          output_hidden_states=True)
+        tokenizer = BertTokenizer.from_pretrained(save_path)
+    else:
+        model = BertModel.from_pretrained(pretrained_name,
+                                          output_hidden_states=True)
+        tokenizer = BertTokenizer.from_pretrained(pretrained_name)
+
+        os.makedirs(save_path, exist_ok=True)
+        model.save_pretrained(save_path)
+        tokenizer.save_pretrained(save_path)
+    return model, tokenizer

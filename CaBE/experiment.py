@@ -18,7 +18,6 @@ from CaBE.helper import get_abspath, scatter_tsne
 CLUSTER_PATH = './pkls/clusters'
 LOG_PATH = './log'
 LMS = {'BERT': lme.BertEncoder,
-       'BERT-attn': lme.BertAttentionEncoder,
        'Elmo': lme.ElmoEncoder}
 
 

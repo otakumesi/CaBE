@@ -13,6 +13,8 @@ class Triples:
         self.triples = []
         self.entities = []
         self.relations = []
+        self.entities_ = []
+        self.relations_ = []
 
         self.gold_ent2cluster = {}
         self.gold_rel2cluster = {}
@@ -42,19 +44,22 @@ class Triples:
             self.gold_ent2cluster[obj_u] = gold_link_obj
 
             self.triples.append((sbj, rel, obj))
-            self.entities.extend([sbj_u, obj_u])
-            self.relations.append(rel_u)
+            self.entities.extend([sbj, obj])
+            self.relations.append(rel)
+
+            self.entities_.extend([sbj_u, obj_u])
+            self.relations_.append(rel_u)
 
             self.sbj2sbj_u[sbj] = sbj_u
             self.obj2obj_u[obj] = obj_u
             self.rel2rel_u[rel] = rel_u
 
     def __after_init(self):
-        self.id2ent = {k: v for k, v in enumerate(self.entities)}
+        self.id2ent = {k: v for k, v in enumerate(self.entities_)}
         self.ent2id = defaultdict(set)
         for k, v in self.id2ent.items():
             self.ent2id[v].add(k)
-        self.id2rel = {k: v for k, v in enumerate(self.relations)}
+        self.id2rel = {k: v for k, v in enumerate(self.relations_)}
 
         self.rel2id = defaultdict(set)
         for k, v in self.id2rel.items():

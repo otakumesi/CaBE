@@ -18,23 +18,15 @@ class CaBE:
         self.data = Triples.from_file(file_path)
 
     def get_encoded_elems(self, num_layer=12):
-        ent_prefix = f'{self.file_name}_ent'
-        entities = self.model.encode(self.data.entities,
-                                     num_layer=num_layer,
-                                     file_prefix=ent_prefix)
-        rel_prefix = f'{self.file_name}_rel'
-        relations = self.model.encode(self.data.relations,
-                                      num_layer=num_layer,
-                                      file_prefix=rel_prefix)
-        return entities, relations
+        return self.model.encode(self.data,
+                                 num_layer=num_layer,
+                                 file_prefix=self.file_name)
 
     def run(self, num_layer=12):
         print("----- Start: run CaBE -----")
 
         print("--- Start: encode phrases ---")
-        entities, relations = self.model.encode(self.data.triples,
-                                                num_layer=num_layer,
-                                                file_prefix=self.file_name)
+        entities, relations = self.get_encoded_elems(num_layer)
         print("--- End: encode phrases ---")
 
         print("--- Start: cluster phrases ---")
