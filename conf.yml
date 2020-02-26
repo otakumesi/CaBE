@@ -3,19 +3,26 @@ task: predict
 ex:
   file_name: 'reverb45k_test'
   enc: BERT
-  similarity: cosine
+  np_sim: cosine
+  rp_sim: cosine
 
 model:
-  num_layer: 
-  threshold: .1
-  linkage: average
+  np_n_layer:
+  rp_n_layer:
+  np_thd: .1
+  rp_thd: .1
+  np_linkage: complete
+  rp_linkage: complete
   cluster_size: 2
 
 grid_search:
-  num_process: 8
-  min_threshold:  0.0
-  max_threshold:  0.15
-  threshold_step: 0.01
+  n_process: 8
+  np_min_thd:  0.0
+  np_max_thd:  0.15
+  np_thd_step: 0.01
+  rp_min_thd:  0.0
+  rp_max_thd:  0.15
+  rp_thd_step: 0.01
   min_layer: 0
   max_layer:
   linkages:

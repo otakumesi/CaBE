@@ -7,10 +7,11 @@ import CaBE.helper as hlp
 
 
 class HAC:
-    def __init__(self, distance_threshold, similarity, linkage):
-        self.threshold = distance_threshold
+    def __init__(self, threshold, similarity, linkage, n_layer):
+        self.threshold = threshold
         self.similarity = similarity
         self.linkage = linkage
+        self.n_layer = n_layer
         self.clustering = AgglomerativeClustering(
             distance_threshold=self.threshold,
             n_clusters=None,
@@ -21,11 +22,12 @@ class HAC:
         assigned_clusters = self.clustering.fit_predict(elements)
         return hlp.transform_clusters(assigned_clusters)
 
-    def file_name(self, name):
-        threshold = f'{self.threshold:.6f}'
-        names = [name, self.linkage, self.similarity, threshold]
-        return "_".join(names)
-      
+    @property
+    def name(self):
+        threshold = f'{self.threshold:.4f}'
+        props = [f'{self.n_layer}', self.similarity, self.linkage, threshold]
+        return '_'.join(props)
+
     @property
     def affinity(self):
         if self.similarity != 'wasserstein':

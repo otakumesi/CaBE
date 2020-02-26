@@ -40,7 +40,7 @@ class Triples:
             gold_link_obj = raw_triple['true_link']['object']
 
             self.gold_ent2cluster[sbj_u] = gold_link_sbj
-            self.gold_rel2cluster[rel_u] = rel
+            self.gold_rel2cluster[rel_u] = f'{gold_link_sbj}|{gold_link_obj}'
             self.gold_ent2cluster[obj_u] = gold_link_obj
 
             self.triples.append((sbj, rel, obj))

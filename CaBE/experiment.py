@@ -24,34 +24,45 @@ LMS = {'BERT': lme.BertEncoder,
 
 def predict(cfg):
     enc_name = cfg.ex.enc
-    linkage = cfg.model.linkage
-    threshold = cfg.model.threshold
-    similarity = cfg.ex.similarity
+
+    np_sim = cfg.ex.np_sim
+    np_thd = cfg.model.np_thd
+    np_linkage = cfg.model.np_linkage
+
+    rp_sim = cfg.ex.rp_sim
+    rp_thd = cfg.model.rp_thd
+    rp_linkage = cfg.model.rp_linkage
 
     enc_model = LMS[enc_name]()
-    num_layer = cfg.model.num_layer or enc_model.default_max_layer
+    np_n_layer = cfg.model.n_layer or enc_model.default_max_layer
+    rp_n_layer = cfg.model.n_layer or enc_model.default_max_layer
 
-    clustering = HAC(distance_threshold=threshold,
-                     similarity=similarity,
-                     linkage=linkage)
-    model = build_model(name=f'{enc_name}_{num_layer}',
-                        enc_model=enc_model,
-                        file_name=cfg.ex.file_name,
-                        clustering=clustering)
+    np_clustering = HAC(threshold=np_thd,
+                        similarity=np_sim,
+                        linkage=np_linkage,
+                        n_layer=np_n_layer)
+    rp_clustering = HAC(threshold=rp_thd,
+                        similarity=rp_sim,
+                        linkage=rp_linkage,
+                        n_layer=rp_n_layer)
+
+    model = build_model(enc_model=enc_model, file_name=cfg.ex.file_name)
 
     params = {"enc_name": enc_name,
-              "num_layer": num_layer,
-              "threshold": threshold,
-              "similarity": similarity,
-              "linkage": linkage}
+              "np_clustering": np_clustering,
+              "rp_clustering": rp_clustering}
 
     experiment(model, params)
 
 
 def grid_search(cfg):
-    thresholds = np.arange(cfg.grid_search.min_threshold,
-                           cfg.grid_search.max_threshold,
-                           cfg.grid_search.threshold_step)
+    np_thresholds = np.arange(cfg.grid_search.np_min_thd,
+                              cfg.grid_search.np_max_thd,
+                              cfg.grid_search.np_thd_step)
+
+    rp_thresholds = np.arange(cfg.grid_search.rp_min_thd,
+                              cfg.grid_search.rp_max_thd,
+                              cfg.grid_search.rp_thd_step)
 
     enc_name = cfg.ex.enc
     enc_model = LMS[enc_name]()
@@ -59,77 +70,121 @@ def grid_search(cfg):
     max_layer = cfg.grid_search.max_layer or enc_model.default_max_layer
     layers = range(cfg.grid_search.min_layer, max_layer+1)
 
-    configs_for_clustering = product([enc_name],
-                                     [cfg.ex.file_name],
-                                     [enc_model],
-                                     thresholds,
-                                     [cfg.ex.similarity],
-                                     cfg.grid_search.linkages,
-                                     layers)
+    model = build_model(enc_model=enc_model, file_name=cfg.ex.file_name)
 
-    with Pool(processes=cfg.grid_search.num_process) as p:
-        results = p.starmap(_grid_search, configs_for_clustering)
+    config_np_clust = product([model],
+                              np_thresholds,
+                              [cfg.ex.np_sim],
+                              cfg.grid_search.linkages,
+                              layers)
 
-    results = filter(None, results)
+    config_rp_clust = product([model],
+                              rp_thresholds,
+                              [cfg.ex.rp_sim],
+                              cfg.grid_search.linkages,
+                              layers)
 
-    sorted_confs = sorted(results, key=lambda kv: np.mean(kv[1]))
-    for name, f1s in sorted_confs:
-        print(f'{name}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
+    with Pool(processes=cfg.grid_search.n_process) as p:
+        np_results = p.starmap(_np_grid_search, config_np_clust)
+        rp_results = p.starmap(_rp_grid_search, config_rp_clust)
+
+    np_results = filter(None, np_results)
+    rp_results = filter(None, rp_results)
+
+    np_sorted = sorted(np_results, key=lambda kv: np.mean(kv[1]))
+    for name, f1s in np_sorted:
+        print(f'{name}-np: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
+
+    rp_sorted = sorted(rp_results, key=lambda kv: np.mean(kv[1]))
+    for name, f1s in rp_sorted:
+        print(f'{name}-rp: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
 
 
-def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
-    clustering = HAC(distance_threshold=thd,
-                     similarity=sim,
-                     linkage=link)
+def _np_grid_search(model, thd, sim, link, layer):
+    clust = HAC(threshold=thd,
+                similarity=sim,
+                linkage=link,
+                n_layer=layer)
 
-    model = build_model(name=f'{enc_name}_{layer}',
-                        enc_model=enc,
-                        file_name=file_name,
-                        clustering=clustering)
-
-    params = {"enc_name": enc_name,
-              "num_layer": layer,
-              "threshold": thd,
-              "similarity": sim,
-              "linkage": link}
-
-    log_name = '_'.join([f'{k}_{v}' for k, v in params.items()])
+    log_name = f'{model.model.__class__.__name__}_{clust.name}'
 
     try:
-        (macro_f1, micro_f1, pairwise_f1), _ = experiment(model, params)
+        print("--- Start: evlaluate noun phrases ---")
+        ent2cluster = model.np_clusters(clust)
+        evl = Evaluator(ent2cluster, model.gold_ent2cluster)
+        eval_and_log(evl)
+        macro_f1 = evl.macro_f1_score
+        micro_f1 = evl.micro_f1_score
+        pairwise_f1 = evl.pairwise_f1_score
+        print("--- End: evaluate noun phrases ---")
     except ValueError:
         # TODO: 根本的な対応はいつか。
         print(f'{log_name} is invalid.')
         return None
-
     return log_name, (macro_f1, micro_f1, pairwise_f1)
 
 
-def build_model(name, enc_model, file_name, clustering):
-    return CaBE(name=name,
-                model=enc_model,
-                file_name=file_name,
-                clustering=clustering)
+def _rp_grid_search(model, thd, sim, link, layer):
+    clust = HAC(threshold=thd,
+                similarity=sim,
+                linkage=link,
+                n_layer=layer)
+
+    log_name = f'{model.model.__class__.__name__}_{clust.name}'
+
+    try:
+        print("--- Start: evlaluate rel phrases ---")
+        rel2cluster = model.rp_clusters(clust)
+        evl = Evaluator(rel2cluster, model.gold_rel2cluster)
+        eval_and_log(evl)
+        macro_f1 = evl.macro_f1_score
+        micro_f1 = evl.micro_f1_score
+        pairwise_f1 = evl.pairwise_f1_score
+        print("--- End: evaluate rel phrases ---")
+    except ValueError:
+        # TODO: 根本的な対応はいつか。
+        print(f'{log_name} is invalid.')
+        return None
+    return log_name, (macro_f1, micro_f1, pairwise_f1)
+
+
+def build_model(enc_model, file_name):
+    return CaBE(model=enc_model, file_name=file_name)
 
 
 def experiment(model, params):
-    ent_outputs, rel_outputs = model.run(params['num_layer'])
-    enc_name, num_layer = params["enc_name"], params["num_layer"]
-    threshold, linkage, similarity = params['threshold'], params['linkage'], params["similarity"]
+    np_clust = params["np_clustering"]
+    rp_clust = params["rp_clustering"]
+
+    ent2cluster, rel2cluster = model.run(np_clust, rp_clust)
 
     with mlflow.start_run():
-        log_param('Language Model', enc_name)
-        log_param('Model Layer', num_layer)
-        log_param('Clustering Threshold', threshold)
-        log_param('Similarity', similarity)
+        enc_name = model.model.__class__.__name__
+        log_param('Encoder', enc_name)
 
-        log_param('Linkage', linkage)
-        param_log = f'Language Model: {enc_name}, Layer: {num_layer}, '\
-            f'Threshold: {threshold}, Similarity: {similarity}, Linkage: {linkage}'
+        log_param('Model Layer of NP', np_clust.n_layer)
+        log_param('Clustering Threshold of NP', np_clust.threshold)
+        log_param('Similarity of NP', np_clust.similarity)
+        log_param('Linkage of NP', np_clust.linkage)
+
+        log_param('Model Layer of RP', rp_clust.n_layer)
+        log_param('Clustering Threshold of RP', rp_clust.threshold)
+        log_param('Similarity of RP', rp_clust.similarity)
+        log_param('Linkage of RP', rp_clust.linkage)
+
+        param_log = f'Encoder: {enc_name}, '\
+            f'NP Layer: {np_clust.n_layer}, '\
+            f'NP Threshold: {np_clust.threshold}, '\
+            f'NP Similarity: {np_clust.similarity}, '\
+            f'NP Linkage: {np_clust.linkage}, ' \
+            f'RP Layer: {rp_clust.n_layer}, '\
+            f'RP Threshold: {rp_clust.threshold}, '\
+            f'RP Similarity: {rp_clust.similarity}, '\
+            f'RP Linkage: {rp_clust.linkage}'
         print(param_log)
 
         print("--- Start: evlaluate noun phrases ---")
-        ent_evl = Evaluator(ent_outputs, model.gold_ent2cluster)
+        ent_evl = Evaluator(ent2cluster, model.gold_ent2cluster)
         eval_and_log(ent_evl)
         ent_f1s = (ent_evl.macro_f1_score,
                    ent_evl.micro_f1_score,
@@ -137,7 +192,7 @@ def experiment(model, params):
         print("--- End: evaluate noun phrases ---")
 
         print("--- Start: evlaluate rel phrases ---")
-        rel_evl = Evaluator(rel_outputs, model.gold_rel2cluster)
+        rel_evl = Evaluator(rel2cluster, model.gold_rel2cluster)
         eval_and_log(rel_evl)
         rel_f1s = (rel_evl.macro_f1_score,
                    rel_evl.micro_f1_score,
@@ -180,25 +235,17 @@ def eval_and_log(evl):
 def visualize_cluster(cfg):
     file_name = cfg.ex.file_name
     enc_name = cfg.ex.enc
-    linkage = cfg.model.linkage
-    similarity = cfg.ex.similarity
-    threshold = cfg.model.threshold
-
     enc_model = LMS[enc_name]()
-    num_layer = cfg.model.num_layer or enc_model.default_max_layer
+
+    np_n_layer = cfg.model.np_n_layer or enc_model.default_max_layer
+    rp_n_layer = cfg.model.rp_n_layer or enc_model.default_max_layer
 
     print('--- Start: build model ---')
-    clustering = HAC(distance_threshold=threshold,
-                     similarity=similarity,
-                     linkage=linkage)
-    model = build_model(name=f'{enc_name}_{num_layer}',
-                        enc_model=enc_model,
-                        file_name=file_name,
-                        clustering=clustering)
+    model = build_model(enc_model=enc_model, file_name=file_name)
     print('--- End: build model ---')
 
     print('--- Start: read phrases ---')
-    entities, relations = model.get_encoded_elems(num_layer=num_layer)
+    entities, relations = model.get_encoded_elems(np_n_layer, rp_n_layer)
     print('--- End: read phrases ---')
 
     print('--- Start: read clusters ---')

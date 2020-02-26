@@ -39,8 +39,8 @@ class CLMEncoder:
 
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
-                ents, rels = pickle.load(f)
-                return ents[:, num_layer, :], rels[:, num_layer, :]
+                ent_embs, rel_embs = pickle.load(f)
+                return ent_embs, rel_embs
 
         token_ids_list = []
         token_pos_list = []
@@ -50,8 +50,8 @@ class CLMEncoder:
             token_ids = self.tokenizer.convert_tokens_to_ids(sum(tokens_triple, []))
             token_ids_list.append(torch.tensor(token_ids, dtype=torch.long))
 
-        ent_of_layers = []
-        rel_of_layers = []
+        ent_embs = []
+        rel_embs = []
         tokens_batch = zip(token_ids_list, token_pos_list)
         with torch.no_grad():
             for token_ids, (sbj_p, rel_p, obj_p) in tokens_batch:
@@ -59,23 +59,23 @@ class CLMEncoder:
                 hid_states = torch.stack(hid_states, axis=0).squeeze(1)
 
                 sbj_states = hid_states[:, :sbj_p, :]
-                ent_of_layers.append(torch.mean(sbj_states, axis=1))
+                ent_embs.append(torch.mean(sbj_states, axis=1))
 
                 rel_p_padded = sbj_p + rel_p
                 rel_states = hid_states[:, sbj_p:rel_p_padded, :]
-                rel_of_layers.append(torch.mean(rel_states, axis=1))
+                rel_embs.append(torch.mean(rel_states, axis=1))
 
                 obj_p_padded = rel_p_padded + obj_p
                 obj_states = hid_states[:, rel_p_padded:obj_p_padded, :]
-                ent_of_layers.append(torch.mean(obj_states, axis=1))
+                ent_embs.append(torch.mean(obj_states, axis=1))
 
-        ent_of_layers = torch.stack(ent_of_layers, axis=0)
-        rel_of_layers = torch.stack(rel_of_layers, axis=0)
+        ent_embs = torch.stack(ent_embs, axis=0)
+        rel_embs = torch.stack(rel_embs, axis=0)
 
         with open(emb_pkl_path, 'wb') as f:
-            pickle.dump((ent_of_layers, rel_of_layers), f,
+            pickle.dump((ent_embs, rel_embs), f,
                         protocol=pickle.HIGHEST_PROTOCOL)
-        return ent_of_layers[:, num_layer, :], rel_of_layers[:, num_layer, :]
+        return ent_embs, rel_embs
 
 
 class BertEncoder(CLMEncoder):
@@ -101,16 +101,16 @@ class ElmoEncoder:
         self.pretrained_name = 'elmo_2x4096_512_2048cnn_2xhighway_5.5B_weights'
         self.tokenizer = WordTokenizer()
 
-    def encode(self, data, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+    def encode(self, data, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = embed_elements_path(file_prefix, self.pretrained_name)
 
         if os.path.isfile(emb_pkl_path):
             with open(emb_pkl_path, 'rb') as f:
                 entities, relations = pickle.load(f)
-                return entities[:, num_layer, :], relations[:, num_layer, :]
+                return entities, relations
 
-        ent_of_layers = []
-        rel_of_layers = []
+        ent_embs = []
+        rel_embs = []
 
         for triple in data.triples:
             sent_tokens = self.tokenizer.batch_tokenize(triple)
@@ -120,24 +120,24 @@ class ElmoEncoder:
             hid_states = torch.from_numpy(hid_states)
 
             sbj_states = hid_states[:, :sbj_p, :]
-            ent_of_layers.append(torch.mean(sbj_states, axis=1))
+            ent_embs.append(torch.mean(sbj_states, axis=1))
 
             rel_p_padded = sbj_p + rel_p
             rel_states = hid_states[:, sbj_p:rel_p_padded, :]
-            rel_of_layers.append(torch.mean(rel_states, axis=1))
+            rel_embs.append(torch.mean(rel_states, axis=1))
 
             obj_p_padded = rel_p_padded + obj_p
             obj_states = hid_states[:, rel_p_padded:obj_p_padded, :]
-            ent_of_layers.append(torch.mean(obj_states, axis=1))
+            ent_embs.append(torch.mean(obj_states, axis=1))
 
-        ent_of_layers = torch.stack(ent_of_layers, axis=0)
-        rel_of_layers = torch.stack(rel_of_layers, axis=0)
+        ent_embs = torch.stack(ent_embs, axis=0)
+        rel_embs = torch.stack(rel_embs, axis=0)
 
         with open(emb_pkl_path, 'wb') as f:
-            pickle.dump((ent_of_layers, rel_of_layers), f,
+            pickle.dump((ent_embs, rel_embs), f,
                         protocol=pickle.HIGHEST_PROTOCOL)
 
-        return ent_of_layers[:, num_layer, :], rel_of_layers[:, num_layer, :]
+        return ent_embs, rel_embs
 
 
 def embed_elements_path(file_prefix, pretrained_name):
