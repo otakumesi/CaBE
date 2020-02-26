@@ -7,7 +7,7 @@ ex:
 
 model:
   num_layer: 
-  threshold: .01
+  threshold: .1
   linkage: average
   cluster_size: 2
 

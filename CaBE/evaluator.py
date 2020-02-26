@@ -94,17 +94,14 @@ def _pairwise_metrics(output_cluster2ele, gold_cluster2ele, gold_ele2cluster):
         pairs = list(combinations(cluster, 2))
         num_output_pairs += len(pairs)
 
-        if len(pairs) <= 1:
-            continue
-
         for e_1, e_2 in pairs:
-            if gold_ele2cluster[e_1] != gold_ele2cluster[e_2]:
-                continue
-
             if e_1 not in gold_ele2cluster:
                 continue
 
             if e_2 not in gold_ele2cluster:
+                continue
+
+            if gold_ele2cluster[e_1] != gold_ele2cluster[e_2]:
                 continue
 
             num_hits += 1
@@ -114,7 +111,7 @@ def _pairwise_metrics(output_cluster2ele, gold_cluster2ele, gold_ele2cluster):
         num_gold_pairs += len(list(combinations(cluster, 2)))
 
     if num_output_pairs == 0 or num_gold_pairs == 0:
-        return 0, 0
+        return 1e-10, 1e-10
 
     pairwise_precision = float(num_hits) / float(num_output_pairs)
     pairwise_recall = float(num_hits) / float(num_gold_pairs)
