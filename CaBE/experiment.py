@@ -69,6 +69,8 @@ def grid_search(cfg):
     with Pool(processes=cfg.grid_search.num_process) as p:
         results = p.starmap(_grid_search, configs_for_clustering)
 
+    results = filter(None, results)
+
     sorted_confs = sorted(results, key=lambda kv: np.mean(kv[1]))
     for name, f1s in sorted_confs:
         print(f'{name}: {f1s[0]:.4f}, {f1s[1]:.4f}, {f1s[2]:.4f}')
@@ -90,8 +92,14 @@ def _grid_search(enc_name, file_name, enc, thd, sim, link, layer):
               "similarity": sim,
               "linkage": link}
 
-    (macro_f1, micro_f1, pairwise_f1), _ = experiment(model, params)
     log_name = '_'.join([f'{k}_{v}' for k, v in params.items()])
+
+    try:
+        (macro_f1, micro_f1, pairwise_f1), _ = experiment(model, params)
+    except ValueError:
+        # TODO: 根本的な対応はいつか。
+        print(f'{log_name} is invalid.')
+        return None
 
     return log_name, (macro_f1, micro_f1, pairwise_f1)
 

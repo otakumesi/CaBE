@@ -13,9 +13,9 @@ model:
 
 grid_search:
   num_process: 8
-  min_threshold:  0.1
-  max_threshold:  1.0
-  threshold_step: 0.1
+  min_threshold:  0.0
+  max_threshold:  0.15
+  threshold_step: 0.01
   min_layer: 0
   max_layer:
   linkages:
