@@ -11,13 +11,14 @@ from mlflow import log_param, log_metric, log_artifact
 
 from CaBE.model import CaBE
 from CaBE.evaluator import Evaluator
-from CaBE.clustering import HAC, HDBSCAN
+from CaBE.clustering import HAC
 import CaBE.language_model_encoder as lme
 from CaBE.helper import get_abspath, scatter_tsne
 
 CLUSTER_PATH = './pkls/clusters'
 LOG_PATH = './log'
 LMS = {'BERT': lme.BertEncoder,
+       'RoBERTa': lme.RobertaEncoder,
        'Elmo': lme.ElmoEncoder}
 
 

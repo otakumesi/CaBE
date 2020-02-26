@@ -4,6 +4,7 @@ import os
 import numpy as np
 import torch
 from transformers import BertTokenizer, BertModel
+from transformers import RobertaTokenizer, RobertaModel
 
 from allennlp.commands.elmo import ElmoEmbedder
 from allennlp.data.tokenizers.word_tokenizer import WordTokenizer
@@ -15,6 +16,8 @@ DEFAULT_FILE_PREFIX = 'elem'
 
 SAVED_MODEL_PATH = '/tmp/MODEL'
 PRETRAINED_BERT_NAME = 'bert-large-uncased'
+PRETRAINED_ROBERTA_NAME = 'roberta-large'
+
 PRETRAINED_ELMO_OPTION_URL = "https://s3-us-west-2.amazonaws.com/"\
     "allennlp/models/elmo/2x4096_512_2048cnn_2xhighway_5.5B/"\
     "elmo_2x4096_512_2048cnn_2xhighway_5.5B_options.json"
@@ -23,15 +26,13 @@ PRETRAINED_ELMO_WEIGHT_URL = "https://s3-us-west-2.amazonaws.com/"\
     "elmo_2x4096_512_2048cnn_2xhighway_5.5B_weights.hdf5"
 
 
-class BertEncoder:
-    default_max_layer = 24
-
-    def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
+class CLMEncoder:
+    def __init__(self, pretrained_name, model_cls, tokenizer_cls):
         self.pretrained_name = pretrained_name
 
-        self.model, self.tokenizer = _init_pretrained_model(BertModel,
-                                                            BertTokenizer,
-                                                            pretrained_name)
+        self.model, self.tokenizer = _init_pretrained_model(pretrained_name,
+                                                            model_cls,
+                                                            tokenizer_cls)
 
     def encode(self, data, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = embed_elements_path(file_prefix, self.pretrained_name)
@@ -75,6 +76,20 @@ class BertEncoder:
             pickle.dump((ent_of_layers, rel_of_layers), f,
                         protocol=pickle.HIGHEST_PROTOCOL)
         return ent_of_layers[:, num_layer, :], rel_of_layers[:, num_layer, :]
+
+
+class BertEncoder(CLMEncoder):
+    default_max_layer = 24
+
+    def __init__(self, pretrained_name=PRETRAINED_BERT_NAME):
+        super().__init__(pretrained_name, BertModel, BertTokenizer)
+
+
+class RobertaEncoder(CLMEncoder):
+    default_max_layer = 24
+
+    def __init__(self, pretrained_name=PRETRAINED_ROBERTA_NAME):
+        super().__init__(pretrained_name, RobertaModel, RobertaTokenizer)
 
 
 class ElmoEncoder:
@@ -129,7 +144,8 @@ def embed_elements_path(file_prefix, pretrained_name):
     return get_abspath(f'{ELEM_FILE_PATH}/{file_prefix}_{pretrained_name}.pkl')
 
 
-def _init_pretrained_model(model_cls, tokenizer_cls, pretrained_name):
+def _init_pretrained_model(pretrained_name, model_cls, tokenizer_cls):
+    print(pretrained_name, model_cls, tokenizer_cls)
     save_path = f'{SAVED_MODEL_PATH}_{pretrained_name}'
     if os.path.exists(save_path) and os.listdir(save_path):
         model = model_cls.from_pretrained(save_path,
