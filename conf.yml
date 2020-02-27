@@ -23,8 +23,10 @@ grid_search:
   rp_min_thd:  0.0
   rp_max_thd:  0.15
   rp_thd_step: 0.01
-  min_layer: 0
-  max_layer:
+  np_min_layer: 0
+  np_max_layer:
+  rp_min_layer: 0
+  rp_max_layer:
   linkages:
     - average
     - single

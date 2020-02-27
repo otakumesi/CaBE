@@ -74,8 +74,18 @@ def grid_search(cfg):
     enc_name = cfg.ex.enc
     enc_model = LMS[enc_name]()
 
-    max_layer = cfg.grid_search.max_layer or enc_model.default_max_layer
-    layers = range(cfg.grid_search.min_layer, max_layer+1)
+    if cfg.grid_search.np_max_layer is None:
+        np_max_layer = enc_model.default_max_layer
+    else:
+        np_max_layer = cfg.grid_search.np_max_layer
+
+    if cfg.grid_search.rp_max_layer is None:
+        rp_max_layer = enc_model.default_max_layer
+    else:
+        rp_max_layer = cfg.grid_search.rp_max_layer
+
+    np_layers = range(cfg.grid_search.np_min_layer, np_max_layer+1)
+    rp_layers = range(cfg.grid_search.rp_min_layer, rp_max_layer+1)
 
     model = build_model(enc_model=enc_model, file_name=cfg.ex.file_name)
 
@@ -83,13 +93,13 @@ def grid_search(cfg):
                               np_thresholds,
                               [cfg.ex.np_sim],
                               cfg.grid_search.linkages,
-                              layers)
+                              np_layers)
 
     config_rp_clust = product([model],
                               rp_thresholds,
                               [cfg.ex.rp_sim],
                               cfg.grid_search.linkages,
-                              layers)
+                              rp_layers)
 
     with Pool(processes=cfg.grid_search.n_process) as p:
         np_results = p.starmap(_np_grid_search, config_np_clust)

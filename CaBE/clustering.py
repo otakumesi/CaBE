@@ -1,7 +1,6 @@
 import hdbscan
 from numpy import cov
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics.pairwise import haversine_distances
 from sklearn.neighbors import DistanceMetric
 
 import CaBE.helper as hlp
@@ -36,9 +35,6 @@ class HAC:
     def affinity(self):
         if self.similarity == 'mahalanobis':
             return 'precomputed'
-
-        if self.similarity == 'haversine':
-            return haversine_distances
 
         return self.similarity
 
