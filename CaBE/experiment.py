@@ -34,8 +34,15 @@ def predict(cfg):
     rp_linkage = cfg.model.rp_linkage
 
     enc_model = LMS[enc_name]()
-    np_n_layer = cfg.model.np_n_layer or enc_model.default_max_layer
-    rp_n_layer = cfg.model.rp_n_layer or enc_model.default_max_layer
+    if cfg.model.np_n_layer is None:
+        np_n_layer = enc_model.default_max_layer
+    else:
+        np_n_layer = cfg.model.np_n_layer
+
+    if cfg.model.rp_n_layer is None:
+        rp_n_layer = enc_model.default_max_layer
+    else:
+        rp_n_layer = cfg.model.rp_n_layer
 
     np_clustering = HAC(threshold=np_thd,
                         similarity=np_sim,

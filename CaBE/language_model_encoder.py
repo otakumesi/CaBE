@@ -34,7 +34,7 @@ class CLMEncoder:
                                                             model_cls,
                                                             tokenizer_cls)
 
-    def encode(self, data, num_layer, file_prefix=DEFAULT_FILE_PREFIX):
+    def encode(self, data, file_prefix=DEFAULT_FILE_PREFIX):
         emb_pkl_path = embed_elements_path(file_prefix, self.pretrained_name)
 
         if os.path.isfile(emb_pkl_path):
