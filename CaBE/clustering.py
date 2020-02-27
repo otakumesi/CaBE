@@ -1,7 +1,8 @@
 import hdbscan
+from numpy import cov
 from sklearn.cluster import AgglomerativeClustering
-from scipy.stats import wasserstein_distance
-from sklearn.metrics import pairwise_distances
+from sklearn.metrics.pairwise import haversine_distances
+from sklearn.neighbors import DistanceMetric
 
 import CaBE.helper as hlp
 
@@ -19,6 +20,9 @@ class HAC:
             linkage=self.linkage)
 
     def run(self, elements):
+        if self.similarity == 'mahalanobis':
+            dist = DistanceMetric.get_metric('mahalanobis', V=cov(elements))
+            elements = dist.pairwise(elements)
         assigned_clusters = self.clustering.fit_predict(elements)
         return hlp.transform_clusters(assigned_clusters)
 
@@ -30,10 +34,13 @@ class HAC:
 
     @property
     def affinity(self):
-        if self.similarity != 'wasserstein':
-            return self.similarity
+        if self.similarity == 'mahalanobis':
+            return 'precomputed'
 
-        return lambda X: pairwise_distances(X, metric=wasserstein_distance, n_jobs=-1)
+        if self.similarity == 'haversine':
+            return haversine_distances
+
+        return self.similarity
 
 
 class HDBSCAN:
