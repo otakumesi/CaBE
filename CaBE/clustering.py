@@ -1,8 +1,6 @@
 import hdbscan
 from numpy import cov
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.neighbors import DistanceMetric
-
 import CaBE.helper as hlp
 
 
@@ -15,13 +13,10 @@ class HAC:
         self.clustering = AgglomerativeClustering(
             distance_threshold=self.threshold,
             n_clusters=None,
-            affinity=self.affinity,
+            affinity=self.similarity,
             linkage=self.linkage)
 
     def run(self, elements):
-        if self.similarity == 'mahalanobis':
-            dist = DistanceMetric.get_metric('mahalanobis', V=cov(elements))
-            elements = dist.pairwise(elements)
         assigned_clusters = self.clustering.fit_predict(elements)
         return hlp.transform_clusters(assigned_clusters)
 
@@ -30,13 +25,6 @@ class HAC:
         threshold = f'{self.threshold:.4f}'
         props = [f'{self.n_layer}', self.similarity, self.linkage, threshold]
         return '_'.join(props)
-
-    @property
-    def affinity(self):
-        if self.similarity == 'mahalanobis':
-            return 'precomputed'
-
-        return self.similarity
 
 
 class HDBSCAN:
@@ -53,4 +41,3 @@ class HDBSCAN:
     def file_name(self, name):
         names = [name, self.similarity]
         return "_".join(names)
-      
