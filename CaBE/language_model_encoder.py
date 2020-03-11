@@ -48,26 +48,28 @@ class CLMEncoder:
             tokens_triple = [self.tokenizer.tokenize(phrase) for phrase in phrases]
             token_pos_list.append([len(tokens) for tokens in tokens_triple])
             token_ids = self.tokenizer.convert_tokens_to_ids(sum(tokens_triple, []))
+            token_ids = self.tokenizer.prepare_for_model(token_ids, max_length=20, pad_to_max_length=True)['input_ids']
             token_ids_list.append(torch.tensor(token_ids, dtype=torch.long))
-
+        token_ids_list = torch.stack(token_ids_list, axis=0)
         ent_embs = []
         rel_embs = []
-        tokens_batch = zip(token_ids_list, token_pos_list)
         with torch.no_grad():
-            for token_ids, (sbj_p, rel_p, obj_p) in tokens_batch:
-                _, _, hid_states = self.model(token_ids.unsqueeze(0))
-                hid_states = torch.stack(hid_states, axis=0).squeeze(1)
+            _, _, hid_states = self.model(token_ids_list)
+            hid_states = torch.stack(hid_states, axis=0).transpose(0, 1)
 
-                sbj_states = hid_states[:, :sbj_p, :]
-                ent_embs.append(torch.mean(sbj_states, axis=1))
+        hid_states_with_pos = zip(hid_states, token_pos_list)
 
-                rel_p_padded = sbj_p + rel_p
-                rel_states = hid_states[:, sbj_p:rel_p_padded, :]
-                rel_embs.append(torch.mean(rel_states, axis=1))
+        for hid_states, (sbj_p, rel_p, obj_p) in hid_states_with_pos:
+            sbj_states = hid_states[:, :sbj_p, :]
+            ent_embs.append(torch.mean(sbj_states, axis=1))
 
-                obj_p_padded = rel_p_padded + obj_p
-                obj_states = hid_states[:, rel_p_padded:obj_p_padded, :]
-                ent_embs.append(torch.mean(obj_states, axis=1))
+            rel_p_padded = sbj_p + rel_p
+            rel_states = hid_states[:, sbj_p:rel_p_padded, :]
+            rel_embs.append(torch.mean(rel_states, axis=1))
+
+            obj_p_padded = rel_p_padded + obj_p
+            obj_states = hid_states[:, rel_p_padded:obj_p_padded, :]
+            ent_embs.append(torch.mean(obj_states, axis=1))
 
         ent_embs = torch.stack(ent_embs, axis=0)
         rel_embs = torch.stack(rel_embs, axis=0)
