@@ -14,6 +14,7 @@ allennlp = "^0.9.0"
 mlflow = "^1.6.0"
 hydra-core = "^0.11.3"
 hdbscan = "^0.8.24"
+fastavro = "^0.22.13"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
