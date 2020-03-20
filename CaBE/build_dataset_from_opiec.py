@@ -37,14 +37,12 @@ def read_avro(file_name):
                 'true_link': {'subject': sbj[0]['w_link']['wiki_link'], 'object': obj[0]['w_link']['wiki_link']},
                 'src_sentences': [src_sentence]
             }
-        dataset.append(triple_record)
+            dataset.append(triple_record)
     return dataset
 
 def build_datasets(args):
     i, file_name = args
-    dataset = read_avro(file_name)
-    with open(f'{OUTPUT_FOLDER}/triples-{i}.json', 'w') as f:
-        json.dump(dataset, f)
+    return read_avro(file_name)
 
 
 AVRO_SCHEMA_FILE = './avroschema/WikiArticleLinkedNLP.avsc'
@@ -57,4 +55,7 @@ AVRO_FILES = avro_folder.glob('*.avro')
 schema = load_schema(AVRO_SCHEMA_FILE)
 
 with Pool(10) as p:
-    p.map(build_datasets, enumerate(AVRO_FILES))
+    datasets = p.map(build_datasets, enumerate(AVRO_FILES))
+    dataset = sum(datasets, [])
+    with open(f'{OUTPUT_FOLDER}/triples.json', 'w') as f:
+        json.dump(dataset, f)
